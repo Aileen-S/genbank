@@ -1,5 +1,4 @@
-# Parse GenBank file to get CVS file with accession numbers and taxonomy
-
+# Parse GenBank file to get CSV file with accession numbers and taxonomy
 
 import csv
 from Bio import SeqIO
