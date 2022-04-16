@@ -3,6 +3,7 @@
 *.gb
 *.fasta
 *.xml
+*.csv
 
 # Standard File
 # Byte-compiled / optimized / DLL files
