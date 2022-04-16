@@ -1,6 +1,8 @@
 # My Additions
 *.txt
 *.gb
+*.fasta
+*.xml
 
 # Standard File
 # Byte-compiled / optimized / DLL files
