@@ -33,7 +33,7 @@ for record in SeqIO.parse("COX1_longest.gb", "gb"):     # Start with genabnk fil
                     x += 1
                     COX1_fasta = COX1_seq.format("fasta")   # Save as fasta
                     COX1_Records.append(COX1_fasta)         # Keep sequences over set length
-                print(COX1_Records, file=open("COX1fullseqs.fasta", "w"))  # Print to file
+print(COX1_Records, file=open("COX1fullseqs.fasta", "w"))  # Print to file
 
 print(str(y) + " records found")
 print(str(x) + " records saved")
