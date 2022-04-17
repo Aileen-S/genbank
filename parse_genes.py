@@ -19,24 +19,21 @@ def loadnamevariants():
 # Get the gene name variants
 genenames = loadnamevariants()
 
+x = 0
+y = 0
 COX1_Records = []
-for record in SeqIO.parse("COX1_longest.gb", "gb"):
-    for feature in record.features:
-        if feature.id in genenames:
-            stdname = genenames[feature.id]
-            if stdname==["COX1"]:
+for record in SeqIO.parse("COX1_longest.gb", "gb"):     # Start with genabnk file
+    for feature in record.features:                     # Examine each record feature
+        for k, v in feature.qualifiers.items():         # Search key:values pairs
+            if v in genenames:          # Not sure of the right syntax for this bit
+                y += 1
+                stdname = genenames[v]
                 COX1_seq = record[feature.location.start:feature.location.end] # Extract sequence
-                COX1_Records.append(COX1_seq)       # Add sequences to list
+                if len(COX1_seq) >= 100:                    # Check sequence length
+                    x += 1
+                    COX1_fasta = COX1_seq.format("fasta")   # Save as fasta
+                    COX1_Records.append(COX1_fasta)         # Keep sequences over set length
+                print(COX1_Records, file=open("COX1fullseqs.fasta", "w"))  # Print to file
 
-# Filter out longest sequences
-fh = open("COX1fullseqa.fasta", "w")        # Write new file
-n = 0                                       # Start count
-COX1full = []                               # Make empty list
-for record in COX1_Records:                 # Process records found from genbank search
-    if len(record.seq) >= 1000:             # Keep only sequences over set length
-        n += 1                              # Count kept sequences
-        COX1fasta = record.format("fasta")  # Format as fasta
-        COX1full.append(COX1fasta)          # Add to new list
-        print(COX1full, file = open("COX1fullseqs.txt", "w"))   # Print to file
-
-print(str(n) + " records saved")
+print(str(y) + " records found")
+print(str(x) + " records saved")
