@@ -5,19 +5,19 @@
 
 import argparse
 from Bio import Entrez
+from Bio import SeqIO
 Entrez.email = "aileen.scott@nhm.ac.uk"
 
 parser = argparse.ArgumentParser(description="Get list of species names of requested taxa.")
 parser.add_argument("-t", "--taxon", type=str)  # Define command line inputs.
-#parser.add_argument("-g", "--gene", type=str)   # -- means argument is optional, input with flags
+parser.add_argument("-g", "--gene", type=str)   # -- means argument is optional, input with flags
 #parser.add_argument("-l", "--length", type=str)
 args = parser.parse_args()         # Process input args from command line
 
-handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon}", retmax=3)# Search for all records of specified taxon
+handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon}", retmax=10)# Search for all records of specified taxon
 record = Entrez.read(handle)
 accs   = record["IdList"]                                               # Save accession numbers
 print(str(record["Count"]) + " records found")                          # Print total records
-print(record)
 
 accs_str = ",".join(accs)
 handle = Entrez.esummary(db="nucleotide", id=accs_str)                  # Get esummary for accessions
@@ -35,10 +35,19 @@ for Tax in TaxSet:
     record = Entrez.read(handle)
     IdList = record["IdList"]                                           # Get accessions
     IdStr  = ",".join(IdList)                                           # Join into string for efetch
-    handle = Entrez.efetch(db="nucleotide", id=IdStr, rettype="gb")     # Get GenBank record for accession list
-    record = handle.read()
+    handle = Entrez.efetch(db="nucleotide", id=IdStr, rettype="gb", retmode="text")     # Get GenBank record for accession list
+    record = SeqIO.parse(handle, "gb")
+    for rec in record:
+        for feature in rec.features:
+            for k, v in feature.qualifiers.items():
+                if k=="gene":
+                    Species[Tax] = {args.gene:[]}
+                    Species[Tax][args.gene].append(
+                        [rec.name,
+                         v,
+                         len(rec[feature.location.start:feature.location.end])])
+print(Species)
 
-# Need to make dict with species, genes and sequences
 # Work out name variants
 
 #for k,v in Species.items():
