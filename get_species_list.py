@@ -114,9 +114,6 @@ print("\nUnrecognised Genes")
 print(unrecgenes)
 
 
-# Fix gene name output
-# Work out name variants
-
 # for k,v in Species.items():
 
 # Add mitochondrion to term
