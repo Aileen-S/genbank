@@ -3,8 +3,6 @@
 # For each species, each gene is a dict containing all the sequence lenghts
 # Find longest, extract and save as fasta
 
-#Earlier version, sort of working.
-
 import argparse
 import urllib
 from Bio import Entrez
@@ -47,7 +45,7 @@ def get_feat_name(feat):
     return featname
 
 
-#
+# Change gene name to standard name
 def set_feat_name(feat, name):
     nametags = ['gene', 'product', 'label', 'standard_name']
     if any(t in feat.qualifiers.keys() for t in nametags):
@@ -78,9 +76,6 @@ for rec in record:                                                      # Save t
 
 print(str(len(taxids)) + " unique species saved")                       # Print total taxon ids
 
-# Also, your line 44 is dangerous - you overwrite any value already in Species for the key Tax, which isn't what you
-# want - that way you'll only ever get one item in that subdict.
-
 species = {}
 for tax in taxids:
     handle = Entrez.esearch(db="nucleotide", term=tax)                # Search for all records for each taxon id
@@ -101,9 +96,9 @@ for tax in taxids:
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
                     else:
-                        species[tax] = {stdname: [output]}
+                        species[tax] = {stdname: [output]}          # Add stdname as new key
                 else:
-                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                    species[tax] = {stdname: [output]}      # Add tax as new key
 
             else:
                 unrecgenes[name].append(name)            # If gene name not in namevarants, save to list to check later
@@ -112,6 +107,8 @@ print("\nSpecies Dict")
 print(species)
 print("\nUnrecognised Genes")
 print(unrecgenes)
+
+
 
 
 # Fix gene name output
