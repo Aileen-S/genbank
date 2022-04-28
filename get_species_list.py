@@ -56,6 +56,29 @@ def set_feat_name(feat, name):
                 feat.qualifiers[t][0] = name
     return feat
 
+
+def search_nuc(term, summaries=False, chunk=10000):
+    # Get initial count of responses
+    searchhand = Entrez.esearch(db="nucleotide", term=term, retmax=0)
+    searchrec = Entrez.read(searchhand)
+    count = int(searchrec["Count"])
+
+    # Yield
+    for start in range(0, count, chunk):
+        # Search and get GB IDs
+        searchhand = Entrez.esearch(db="nucleotide", term=term, retstart=start, retmax=chunk)
+        searchrec = Entrez.read(searchhand)
+        gbids = searchrec['IdList']
+        # Yield only GBIDs if no summaries desired
+        if not summaries:
+            yield gbids
+        else:
+            # Retrieve summaries and yield both otherwise
+            sumhand = Entrez.esummary(db="nucleotide", id=','.join(gbids))
+            sumrec = Entrez.read(sumhand)
+            yield gbids, sumrec
+
+
 # This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
 class MultilineFormatter(argparse.HelpFormatter):
     def _fill_text(self, text, width, indent):
@@ -75,14 +98,14 @@ parser = argparse.ArgumentParser(description="Search GenBank, retrive gene seque
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest: must be specified")
 parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
-parser.add_argument("-n", "--nuclear", type=str, choices=["yes"], help="Search for nuclear as well as mitochondrial genes.")
+parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuclear as well as mitochondrial genes.")
 # parser.add_argument("-l", "--length", type=str)
 
 
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-# args = parser.parse_args('-t Agabinae'.split(' ')) # This is how I step through the script interactively
+# args = parser.parse_args('-t Dytiscidae -e '.split(' ')) # This is how I step through the script interactively
 
 # Get name variants
 nameconvert, types, namevariants = loadnamevariants()
@@ -95,24 +118,28 @@ unrecgenes = defaultdict(list)
 
 
 Entrez.email = args.email
-if args.nuclear is None:    # If -n option not used, then include "mitochondrial" in search term.
-    handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon} AND mitochondrial")
-else:                       # If -n is used, search for all records for taxon.
-    handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon}")
-record = Entrez.read(handle)
-accs   = record["IdList"]                                               # Save accession numbers
-accstr = ",".join(accs)
-count = int(record["Count"])
-print(str(record["Count"]) + " records found")                          # Print total records
 
-batchsize = 500
-for start in range(0, count, batchsize):
-    handle = Entrez.esummary(db="nucleotide", id=accstr, retmax=batchsize, retstart=start)                  # Get esummary for accessions
-    record = Entrez.read(handle)
-    taxids = set()                                                          # Make empty set to save taxon ids
-    for rec in record:                                                      # Save taxon ids in a set (removes duplicates)
-        tax = ("txid"+str(int(rec["TaxId"])))                               # Add "txid" before id number for esearch
-        taxids.add(tax)
+# Generate search term to get all sequences in the search taxonomy
+# - if -n option not used, then include "mitochondrial" in search term.
+basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"\ 
+             f"{'' if args.nuclear else ' AND mitochondrion[filter]'}"
+
+# Retrieve all taxids that represent tips of the NCBI Taxonomy tree
+# Make the search generator
+searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
+taxids = set()
+#i = 0
+for gbids, summaries in searchgen:
+    # gbids, summaries = next(searchgen)
+    #i += 1
+    taxa = set(int(s['TaxId']) for s in summaries)
+    taxids.update(taxa)
+    #print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
+
+# Some of these will be subspecies.
+# You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
+# Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
+
 
 print(str(len(taxids)) + " unique species saved")                       # Print total taxon ids
 
