@@ -3,16 +3,12 @@
 # For each species, each gene is a dict containing all the sequence lenghts
 # Find longest, extract and save as fasta
 
-#Earlier version, sort of working.
-
 import argparse
 import urllib
 from Bio import Entrez
 from Bio import SeqIO
+import textwrap as _textwrap
 from collections import defaultdict
-## Entrez.email = "aileen.scott@nhm.ac.uk" # TJC: this is pretty bad practice, you don't want your
-# personal details hardcoded into a script
-
 
 # Function definitions
 
@@ -60,12 +56,26 @@ def set_feat_name(feat, name):
                 feat.qualifiers[t][0] = name
     return feat
 
+# This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
+class MultilineFormatter(argparse.HelpFormatter):
+    def _fill_text(self, text, width, indent):
+        text = self._whitespace_matcher.sub(' ', text).strip()
+        paragraphs = text.split('|n ')
+        multiline_text = ''
+        for paragraph in paragraphs:
+            formatted_paragraph = _textwrap.fill(paragraph, width, initial_indent=indent,
+                                                 subsequent_indent=indent
+                                                 ) + '\n\n'
+            multiline_text = multiline_text + formatted_paragraph
+        return multiline_text
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Get list of species names of requested taxa.")
-parser.add_argument("-t", "--taxon", type=str)  # Define command line inputs.
-parser.add_argument("-g", "--gene", type=str)   # -- means argument is optional, input with flags
-parser.add_argument("-e", "--email", type=str, help="your email registered with NCBI")
+parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
+
+parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest: must be specified")
+parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
+parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
+parser.add_argument("-n", "--nuclear", type=str, choices=["yes"], help="Search for nuclear as well as mitochondrial genes.")
 # parser.add_argument("-l", "--length", type=str)
 
 
@@ -83,23 +93,28 @@ nameconvert, types, namevariants = loadnamevariants()
 # Set up for unrecognised genes
 unrecgenes = defaultdict(list)
 
-handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon}", retmax=10)  # Search for all records of specified taxon
+
+Entrez.email = args.email
+if args.nuclear is None:    # If -n option not used, then include "mitochondrial" in search term.
+    handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon} AND mitochondrial")
+else:                       # If -n is used, search for all records for taxon.
+    handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon}")
 record = Entrez.read(handle)
 accs   = record["IdList"]                                               # Save accession numbers
+accstr = ",".join(accs)
+count = int(record["Count"])
 print(str(record["Count"]) + " records found")                          # Print total records
 
-accstr = ",".join(accs)
-handle = Entrez.esummary(db="nucleotide", id=accstr)                  # Get esummary for accessions
-record = Entrez.read(handle)
-taxids = set()                                                          # Make empty set to save taxon ids
-for rec in record:                                                      # Save taxon ids in a set (removes duplicates)
-    tax = ("txid"+str(int(rec["TaxId"])))                               # Add "txid" before id number for esearch
-    taxids.add(tax)
+batchsize = 500
+for start in range(0, count, batchsize):
+    handle = Entrez.esummary(db="nucleotide", id=accstr, retmax=batchsize, retstart=start)                  # Get esummary for accessions
+    record = Entrez.read(handle)
+    taxids = set()                                                          # Make empty set to save taxon ids
+    for rec in record:                                                      # Save taxon ids in a set (removes duplicates)
+        tax = ("txid"+str(int(rec["TaxId"])))                               # Add "txid" before id number for esearch
+        taxids.add(tax)
 
 print(str(len(taxids)) + " unique species saved")                       # Print total taxon ids
-
-# Also, your line 44 is dangerous - you overwrite any value already in Species for the key Tax, which isn't what you
-# want - that way you'll only ever get one item in that subdict.
 
 species = {}
 for tax in taxids:
