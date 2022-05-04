@@ -22,9 +22,10 @@ for gene in genes:
         description, variants = line.split(":")
         name, annotype, fullname = description.split(";")
         variants = variants.split(',')
-        variants.extend([name, fullname.upper()])
         if gene in variants:
             names[gene] = " OR " .join(variants)    # Add to dict, gene as key, variants in string form as value
+
+print(names)
 
 for gene in names:      # Iterate through dict, new search for each gene names list
     handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon} AND ({names[gene]})")
