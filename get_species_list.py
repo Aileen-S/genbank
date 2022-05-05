@@ -3,6 +3,10 @@
 # For each species, each gene is a dict containing all the sequence lenghts
 # Find longest, extract and save as fasta
 
+# Need to add in search just for one gene
+
+#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus -g COI
+
 import argparse
 import urllib
 from Bio import Entrez
@@ -12,6 +16,7 @@ from collections import defaultdict
 
 # Function definitions
 
+# Opens url,
 def loadnamevariants():
     conversion = {}
     url = "https://raw.githubusercontent.com/tjcreedy/constants/master/gene_name_variants.txt"
@@ -62,7 +67,7 @@ def search_nuc(term, summaries=False, chunk=10000):
     searchhand = Entrez.esearch(db="nucleotide", term=term, retmax=0)
     searchrec = Entrez.read(searchhand)
     count = int(searchrec["Count"])
-
+    print(str(count) + " records found")
     # Yield
     for start in range(0, count, chunk):
         # Search and get GB IDs
@@ -94,7 +99,6 @@ class MultilineFormatter(argparse.HelpFormatter):
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
-
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest: must be specified")
 parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
@@ -121,35 +125,32 @@ Entrez.email = args.email
 
 # Generate search term to get all sequences in the search taxonomy
 # - if -n option not used, then include "mitochondrial" in search term.
-basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"\ 
+basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"\
              f"{'' if args.nuclear else ' AND mitochondrion[filter]'}"
 
 # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
 # Make the search generator
 searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
+
 taxids = set()
-#i = 0
+i = 0
 for gbids, summaries in searchgen:
     # gbids, summaries = next(searchgen)
-    #i += 1
+    i += 1
     taxa = set(int(s['TaxId']) for s in summaries)
     taxids.update(taxa)
-    #print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
+    print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
 
 # Some of these will be subspecies.
 # You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
 # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
 
 
-print(str(len(taxids)) + " unique species saved")                       # Print total taxon ids
+print(str(len(taxids)) + " unique taxon IDs saved")                       # Print total taxon ids
 
 species = {}
 for tax in taxids:
-    handle = Entrez.esearch(db="nucleotide", term=tax)                # Search for all records for each taxon id
-    # Issue 2 is that you're not narrowing down your search here to include only mitochondrial
-    # sequences. Hence you'll get some weird names in your unrecgenes like ARK, H3 or H4 - these
-    # are nuclear genes. Now of course at some point you might want these, but the namevariants
-    # file is not set up for these so they will be ignored for now
+    handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
     accstr = ",".join(accs)                                           # Join into string for efetch
