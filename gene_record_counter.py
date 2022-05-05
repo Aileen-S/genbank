@@ -1,4 +1,5 @@
 # Seach GenBank and return number of records for specified taxon and gene(s).
+# Only set up for mitochondrial genes at the moment.
 # Input taxon, gene and email address.
 
 import urllib
@@ -12,24 +13,26 @@ parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. For mul
 parser.add_argument("-e", "--email", type=str, help="Your email address. Required by NCBI.")
 args = parser.parse_args()
 
+
 Entrez.email = args.email
-genes = args.gene.split(",")    # Split genes string into a list
+genes = args.gene.upper()       # Change input genes to upper case
+genes = genes.split(",")        # Split genes string into a list
+
 names = {}                      # Make empty dict for name variants
 for gene in genes:
     url = "https://raw.githubusercontent.com/tjcreedy/constants/master/gene_name_variants.txt"
     for line in urllib.request.urlopen(url):
         line = line.decode('utf-8').strip()
-        description, variants = line.split(":")
-        name, annotype, fullname = description.split(";")
-        variants = variants.split(',')
+        description, variants = line.split(":")             # Variants = everything after colon
+        name, annotype, fullname = description.split(";")   # Name = name before first semicolon
+        variants = variants.split(',')                      # Save variants as a list
         if gene in variants:
-            names[gene] = " OR " .join(variants)    # Add to dict, gene as key, variants in string form as value
+            names[name] = " OR " .join(variants)    # Add to dict, gene as key, variants in string form as value
 
-print(names)
+print(f"Searching {args.taxon} records for genes: {list(names.keys())}")
 
 for gene in names:      # Iterate through dict, new search for each gene names list
     handle = Entrez.esearch(db="nucleotide", term=f"{args.taxon} AND ({names[gene]})")
     record = Entrez.read(handle)
     count = int(record["Count"])
     print(str(record["Count"]) + " records found for " + gene)
-
