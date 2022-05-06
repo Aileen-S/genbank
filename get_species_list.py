@@ -3,9 +3,10 @@
 # For each species, each gene is a dict containing all the sequence lenghts
 # Find longest, extract and save as fasta
 
-# Need to add in search just for one gene
+# Need to add in search just for specific genes
+# best format for sequence?
 
-#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus -g COI
+#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
 
 import argparse
 import urllib
@@ -100,7 +101,7 @@ class MultilineFormatter(argparse.HelpFormatter):
 # Argument parser
 parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest: must be specified")
-parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
+#parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuclear as well as mitochondrial genes.")
 # parser.add_argument("-l", "--length", type=str)
@@ -177,7 +178,7 @@ for tax in taxids:
                 # You might want to add a catch here to only include features if they are in a list
                 # of required genes that you supply.
                 sequence = rec[feature.location.start:feature.location.end]
-                output = [rec.name, type, len(sequence)]        # Save relevent info in list (Add sequence when working)
+                output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]                    # Is this the best format for the sequence?
                 if tax in species:                              # If taxon ID in dict
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
