@@ -7,9 +7,9 @@ species = {1075904: {'COX1': [['COX1', 'JN842980', 'CDS', 700], ['COX1', 'JN8429
 # Is a dict a sensible intermediate step here?
 
 
-def findmax(list):
-    maxrec = list[0]
-    for rec in list:
+def findmax(x):
+    maxrec = x[0]
+    for rec in x:
         if rec[3] > maxrec[3]:
             maxrec = rec
     return maxrec
@@ -21,7 +21,7 @@ for tax, stdname in species.items():
         if gene in longest:
             longest[gene].append(new)
         else:
-            longest[gene] = new
+            longest[gene] = [new]
 print(species)
 print(longest)
         #new = max(list, key=lambda x: x[2])
