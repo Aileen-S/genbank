@@ -1,19 +1,18 @@
 # AIMS
 # Get list of species (db_xref) from GenBank and remove duplicates
-# Each species is a dict
-# For each species, each gene is a dict containing all the sequence lenghts
-# Find longest, extract and save as fasta. Separate fasta file for each gene, ready for alignment.
+# Make dict: species = {taxonID {gene {records}}}
+# Find longest, extract and save as fasta.
+# Separate fasta file for each gene, ready for alignment.
 
 # PROBLEMS
 # Records saved counter not adding up to records found counter
-# Not sure if fasta is in the right format. New lines needed?
 
 # TO DO
 # Need to add argparse option to search for specific genes
 # Set min sequence length
 # Max sequence length 20000[SLEN]
 # How to include ATP8
-# How to include COX1: USEARCH or manual alignment
+# How to include COX1: USEARCH or manual alignment? Filter full sequences to align separately?
 
 
 #python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
@@ -242,7 +241,7 @@ for tax, stdname in species.items():
 for gene, records in longest.items():
     file = open(f"{gene}test.fasta", "w")
     for rec in records:
-        file.write("> " + rec[1] + " " + rec[2] + "\n" + rec[5] + "\n")
+        file.write(">" + rec[1] + " " + rec[2] + "\n" + rec[5] + "\n")
 
 
 
