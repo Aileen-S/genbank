@@ -1,12 +1,23 @@
+# AIMS
 # Get list of species (db_xref) from GenBank and remove duplicates
 # Each species is a dict
 # For each species, each gene is a dict containing all the sequence lenghts
-# Find longest, extract and save as fasta
+# Find longest, extract and save as fasta. Separate fasta file for each gene, ready for alignment.
 
-# Need to add in search just for specific genes
-# best format for sequence?
+# PROBLEMS
+# Records saved counter not adding up to records found counter
+# Not sure if fasta is in the right format. New lines needed?
+
+# TO DO
+# Need to add argparse option to search for specific genes
+# Set min sequence length
+# Max sequence length 20000[SLEN]
+# How to include ATP8
+# How to include COX1: USEARCH or manual alignment
+
 
 #python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
+
 
 import argparse
 import urllib
@@ -148,9 +159,19 @@ for gbids, summaries in searchgen:
 
 
 print(str(len(taxids)) + " unique taxon IDs saved")                       # Print total taxon ids
+print("Searching GenBank")
+print("Downloading GenBank records for taxon IDs 0 to 100")
 
+x = 0
+y = 0
 species = {}
 for tax in taxids:
+    y += 1
+    if y % 100 == 0:
+        if (y+100) < len(taxids):
+            print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}")
+        else:
+            print(f"Downloading GenBank records for taxon IDs {y + 1} to {len(taxids)}")
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
@@ -158,6 +179,7 @@ for tax in taxids:
     handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
     record = SeqIO.parse(handle, "gb")
     for rec in record:
+        x += 1
         for feature in rec.features:
             type = feature.type                                 # Retrieve the feature type, might be useful later
             # Issue 3 is that this is useful now! If you inspect any genbank file, you'll see that
@@ -191,13 +213,36 @@ for tax in taxids:
                 unrecgenes[rec.name].append(name)            # If gene name not in namevarants, save to list to check later
                 # I changed the key here to rec.name so it makes a little more sense to me
 
-print("\nSpecies Dict")
-print(species)
+print(f"{str(x)} records saved to species dict")
+
 print("\nUnrecognised Genes")
 print(unrecgenes)
 
+# Set first record as max value, iterate through records and replace if another sequence is longer.
+def findmax(x):
+    maxrec = x[0]
+    for record in x:
+        if record[4] > maxrec[4]:
+            maxrec = record
+    return maxrec
 
-# for k,v in Species.items():
+# Dict for longest sequences, key is gene stdname, value is list of records
+longest = {}
+for tax, stdname in species.items():
+    for gene, list in stdname.items():
+        new = findmax(list)
+        if gene in longest:
+            longest[gene].append(new)
+        else:
+            longest[gene] = [new]
+#print(species)
+#print(longest)
 
-# Add mitochondrion to term
-# Max sequence length 20000[SLEN]
+# Save each gene list to separate fasta file
+for gene, records in longest.items():
+    file = open(f"{gene}test.fasta", "w")
+    for rec in records:
+        file.write("> " + rec[1] + " " + rec[2] + "\n" + rec[5] + "\n")
+
+
+
