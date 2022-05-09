@@ -108,7 +108,8 @@ class MultilineFormatter(argparse.HelpFormatter):
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
-parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest: must be specified")
+parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
+parser.add_argument("-m", "--mpc", action="store_true", help="Save only mitochondrial protein coding genes")
 #parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuclear as well as mitochondrial genes.")
@@ -158,6 +159,7 @@ print(f"{len(taxids)} unique taxon IDs saved")
 print("Searching GenBank")
 print("Downloading GenBank records for taxon IDs 0 to 100")
 
+mpc = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6"]
 x = 0
 y = 0
 species = {}
@@ -183,8 +185,11 @@ for tax in taxids:
             name = get_feat_name(feature)                       # Use function to search for gene names
             if name in nameconvert:
                 stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
-                # You might want to add a catch here to only include features if they are in a list
-                # of required genes that you supply.
+                if args.mpc:
+                    if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
+                        continue
+                    else:
+                        pass
                 sequence = rec[feature.location.start:feature.location.end]
                 output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]                    # Is this the best format for the sequence?
                 if tax in species:                              # If taxon ID in dict
@@ -194,11 +199,11 @@ for tax in taxids:
                         species[tax] = {stdname: [output]}
                 else:
                     species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
-
             else:
                 unrecgenes.add(name)
 
 print(f"{str(x)} genes saved to species dict")
+#print(species)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
