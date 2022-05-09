@@ -4,15 +4,13 @@
 # Find longest, extract and save as fasta.
 # Separate fasta file for each gene, ready for alignment.
 
-# PROBLEMS
-# Records saved counter not adding up to records found counter
-
 # TO DO
 # Need to add argparse option to search for specific genes
 # Set min sequence length
 # Max sequence length 20000[SLEN]
 # How to include ATP8
 # How to include COX1: USEARCH or manual alignment? Filter full sequences to align separately?
+# Subspecies problem
 
 
 #python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
@@ -124,12 +122,11 @@ args = parser.parse_args()         # Process input args from command line
 
 # Get name variants
 nameconvert, types, namevariants = loadnamevariants()
-# So issue 1 was that you had an old version of the loadnamevariants function, sorry about that.
-# I've updated this here - you can just ignore the types and namevariants objects, you (probably)
-# won't need them
+
 
 # Set up for unrecognised genes
-unrecgenes = defaultdict(list)
+#unrecgenes = defaultdict(list)
+unrecgenes = set()
 
 
 Entrez.email = args.email
@@ -157,7 +154,7 @@ for gbids, summaries in searchgen:
 # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
 
 
-print(str(len(taxids)) + " unique taxon IDs saved")                       # Print total taxon ids
+print(f"{len(taxids)} unique taxon IDs saved")
 print("Searching GenBank")
 print("Downloading GenBank records for taxon IDs 0 to 100")
 
@@ -180,19 +177,9 @@ for tax in taxids:
     for rec in record:
         x += 1
         for feature in rec.features:
-            type = feature.type                                 # Retrieve the feature type, might be useful later
-            # Issue 3 is that this is useful now! If you inspect any genbank file, you'll see that
-            # most genes have both a gene feature and a CDS/tRNA/rRNA feature. This makes sense for
-            # nuclear sequences but is meaningless duplication in mitogenomes. There'll also be
-            # various other features, the standard one being a 'source' annotation which contains
-            # more metadata (I don't really know why either...). So, to remove duplicates and
-            # ignore other types of annotation, I would add a filter here to only process features
-            # that are CDS or rRNA, and just skip any others. Alternatively, you could just look at
-            # gene annotations, although you'd need to filter out the tRNAs at some point...
+            type = feature.type
             if type not in ('CDS', 'rRNA'):
-                continue
-            # continue = skip the rest of the current iteration of this loop, i.e. in this case, go
-            # on to the next feature in rec.features
+                continue  # skip the rest of the current iteration of this loop
             name = get_feat_name(feature)                       # Use function to search for gene names
             if name in nameconvert:
                 stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
@@ -209,10 +196,9 @@ for tax in taxids:
                     species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
 
             else:
-                unrecgenes[rec.name].append(name)            # If gene name not in namevarants, save to list to check later
-                # I changed the key here to rec.name so it makes a little more sense to me
+                unrecgenes.add(name)
 
-print(f"{str(x)} records saved to species dict")
+print(f"{str(x)} genes saved to species dict")
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
