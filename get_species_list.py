@@ -6,13 +6,16 @@
 
 # PROBLEMS
 # Lines 209-235, from "for rec in record:" : unsure if loop syntax is right. Might be missing genes.
+# Better way to get taxonomy for CSV?
+# Outdated records. Eg Dytiscinae split into Dytiscinae and Cybistrinae now. Need to manually check each?
+# Possible to add filter to prioritise records with multiple genes, when filtering for length? Better for alignment.
 
 # TO DO
 # Need to add argparse option to search for specific genes
-# Set min sequence length
-# Max sequence length 20000[SLEN]
+# Set min sequence length?
+# Set max sequence length 20000[SLEN]
 # How to include ATP8
-# How to include COX1: USEARCH or manual alignment? Filter full sequences to align separately?
+# How to include COX1: USEARCH or manual split after alignment? Filter full length sequences to align separately?
 # Subspecies problem
 # Add nuclear genes/16S and name variants
 
@@ -99,25 +102,25 @@ def search_nuc(term, summaries=False, chunk=10000):
 
 
 # Write CSV metadata file
-with open("metadata.csv", "w") as file:  # Open output file
-    writer = csv.writer(file)  # Name writer object
+with open("metadata.csv", "w") as file:     # Open output file
+    writer = csv.writer(file)               # Name writer object
     writer.writerow(
         ["Accession", "Species", "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass",
          "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", "1", "2",
-         "3"])  # Specify column names
+         "3"])  # Write column names
 
 
 # Write row of metadata file
 def writecsv(x):                                # x = genbank record
-    gi  = x.name                            # Get accessions (record.name gives accession, record.id gives version)
-    spe = x.annotations["organism"]         # Get genus/species
-    taxonomy = x.annotations["taxonomy"]         # Get higher taxonomy list
-    row = [gi, spe]                         # New list with accession and species names
+    gbid  = x.name                              # Get accessions (record.name gives accession, record.id gives version)
+    spe = x.annotations["organism"]             # Get genus/species
+    taxonomy = x.annotations["taxonomy"]        # Get higher taxonomy list
+    row = [gbid, spe]                           # New list with accession and species names
     for level in taxonomy:
         row.append(level)                       # Add taxon levels to list
     with open("metadata.csv", "a") as file:
-        writer = csv.writer(file)  # Name writer object
-        writer.writerow(row)                   # Write row
+        writer = csv.writer(file)               # Name writer object
+        writer.writerow(row)                    # Write row
 
 
 # This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
