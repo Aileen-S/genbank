@@ -4,8 +4,8 @@
 # Find longest, extract and save as fasta.
 # Separate fasta file for each gene, ready for alignment.
 
-
-# Lines 197-203: is loop syntax right to save all records?
+# PROBLEMS
+# Lines 209-235, from "for rec in record:" : unsure if loop syntax is right. Might be missing genes.
 
 # TO DO
 # Need to add argparse option to search for specific genes
@@ -15,7 +15,6 @@
 # How to include COX1: USEARCH or manual alignment? Filter full sequences to align separately?
 # Subspecies problem
 # Add nuclear genes/16S and name variants
-# Need output csv metadata file
 
 
 #python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
@@ -23,6 +22,7 @@
 
 import argparse
 import urllib
+import csv
 from Bio import Entrez
 from Bio import SeqIO
 import textwrap as _textwrap
@@ -98,6 +98,28 @@ def search_nuc(term, summaries=False, chunk=10000):
             yield gbids, sumrec
 
 
+# Write CSV metadata file
+with open("metadata.csv", "w") as file:  # Open output file
+    writer = csv.writer(file)  # Name writer object
+    writer.writerow(
+        ["Accession", "Species", "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass",
+         "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", "1", "2",
+         "3"])  # Specify column names
+
+
+# Write row of metadata file
+def writecsv(x):                                # x = genbank record
+    gi  = x.name                            # Get accessions (record.name gives accession, record.id gives version)
+    spe = x.annotations["organism"]         # Get genus/species
+    taxonomy = x.annotations["taxonomy"]         # Get higher taxonomy list
+    row = [gi, spe]                         # New list with accession and species names
+    for level in taxonomy:
+        row.append(level)                       # Add taxon levels to list
+    with open("metadata.csv", "a") as file:
+        writer = csv.writer(file)  # Name writer object
+        writer.writerow(row)                   # Write row
+
+
 # This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
 class MultilineFormatter(argparse.HelpFormatter):
     def _fill_text(self, text, width, indent):
@@ -110,6 +132,7 @@ class MultilineFormatter(argparse.HelpFormatter):
                                                  ) + '\n\n'
             multiline_text = multiline_text + formatted_paragraph
         return multiline_text
+
 
 # Argument parser
 parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
@@ -133,7 +156,9 @@ nameconvert, types, namevariants = loadnamevariants()
 # Set up for unrecognised genes
 #unrecgenes = defaultdict(list)
 unrecgenes = set()
-skipgenes = set()
+
+# Set for mitochondiral non-coding genes (filtered out if -m argument used)
+mncgenes = set()
 
 Entrez.email = args.email
 
@@ -190,19 +215,21 @@ for tax in taxids:
             if name in nameconvert:
                 stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
                 if args.mpc:
-                    if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
-                        skipgenes.add(stdname)
-
-                    else:
+                    if stdname in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
                         pass
+                    else:
+                        mncgenes.add(stdname)
+                        continue
                 sequence = rec[feature.location.start:feature.location.end]
-                output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]                    # Is this the best format for the sequence?
+                output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]
                 if tax in species:                              # If taxon ID in dict
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
+                        writecsv(rec)
                         x += 1
                 else:
                     species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                    writecsv(rec)
                     x += 1
             else:
                 unrecgenes.add(name)
@@ -212,7 +239,7 @@ print(species)
 
 if args.mpc:
     print("\nMitochondrial non-coding genes, not saved:")
-    print(skipgenes)
+    print(mncgenes)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
