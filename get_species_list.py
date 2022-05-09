@@ -4,6 +4,9 @@
 # Find longest, extract and save as fasta.
 # Separate fasta file for each gene, ready for alignment.
 
+
+# Lines 197-203: is loop syntax right to save all records?
+
 # TO DO
 # Need to add argparse option to search for specific genes
 # Set min sequence length
@@ -11,6 +14,8 @@
 # How to include ATP8
 # How to include COX1: USEARCH or manual alignment? Filter full sequences to align separately?
 # Subspecies problem
+# Add nuclear genes/16S and name variants
+# Need output csv metadata file
 
 
 #python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
@@ -128,7 +133,7 @@ nameconvert, types, namevariants = loadnamevariants()
 # Set up for unrecognised genes
 #unrecgenes = defaultdict(list)
 unrecgenes = set()
-
+skipgenes = set()
 
 Entrez.email = args.email
 
@@ -177,7 +182,6 @@ for tax in taxids:
     handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
     record = SeqIO.parse(handle, "gb")
     for rec in record:
-        x += 1
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA'):
@@ -187,7 +191,8 @@ for tax in taxids:
                 stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
                 if args.mpc:
                     if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
-                        continue
+                        skipgenes.add(stdname)
+
                     else:
                         pass
                 sequence = rec[feature.location.start:feature.location.end]
@@ -195,15 +200,19 @@ for tax in taxids:
                 if tax in species:                              # If taxon ID in dict
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
-                    else:
-                        species[tax] = {stdname: [output]}
+                        x += 1
                 else:
                     species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                    x += 1
             else:
                 unrecgenes.add(name)
 
-print(f"{str(x)} genes saved to species dict")
-#print(species)
+print(f"{str(x)} gene records saved to species dict")
+print(species)
+
+if args.mpc:
+    print("\nMitochondrial non-coding genes, not saved:")
+    print(skipgenes)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
