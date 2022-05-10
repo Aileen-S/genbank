@@ -240,7 +240,7 @@ for tax in taxids:
                 unrecgenes.add(name)
 
 print(f"{str(x)} gene records saved to species dict")
-print(species)
+#print(species)
 
 if args.mpc:
     print("\nMitochondrial non-coding genes, not saved:")
