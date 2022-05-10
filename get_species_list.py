@@ -5,10 +5,12 @@
 # Separate fasta file for each gene, ready for alignment.
 
 # PROBLEMS
-# Lines 209-235, from "for rec in record:" : unsure if loop syntax is right. Might be missing genes.
+# Lines from "for rec in record:" : unsure if loop syntax is right. Not saving all sequences.
 # Better way to get taxonomy for CSV?
 # Outdated records. Eg Dytiscinae split into Dytiscinae and Cybistrinae now. Need to manually check each?
 # Possible to add filter to prioritise records with multiple genes, when filtering for length? Better for alignment.
+# Alignment very gappy. Possible outliers, need to find these.
+# Duplicate records in CSV file
 
 # TO DO
 # Need to add argparse option to search for specific genes
@@ -105,7 +107,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Species", "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass",
+        ["Accession", "Taxon ID", "Species", "Gene", "Sequence Length", "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass",
          "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", "1", "2",
          "3"])  # Write column names
 
@@ -115,7 +117,7 @@ def writecsv(x):                                # x = genbank record
     gbid  = x.name                              # Get accessions (record.name gives accession, record.id gives version)
     spe = x.annotations["organism"]             # Get genus/species
     taxonomy = x.annotations["taxonomy"]        # Get higher taxonomy list
-    row = [gbid, spe]                           # New list with accession and species names
+    row = [gbid, tax, spe, stdname, len(sequence)]                           # New list with accession and species names
     for level in taxonomy:
         row.append(level)                       # Add taxon levels to list
     with open("metadata.csv", "a") as file:
