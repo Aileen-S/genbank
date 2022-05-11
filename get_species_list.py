@@ -22,7 +22,7 @@
 # Add nuclear genes/16S and name variants
 
 
-#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus
+#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus -m
 
 
 import argparse
@@ -102,6 +102,24 @@ def search_nuc(term, summaries=False, chunk=10000):
             sumrec = Entrez.read(sumhand)
             yield gbids, sumrec
 
+
+# Filter sequence length
+# Returns true if sequence is in target range
+def seqlength(x):
+    url = "https://raw.githubusercontent.com/Aileen-S/genbank/main/sequencelength.txt?token=GHSAT0AAAAAABQZX632I3W6OLMRN2TREMRQYT3X2MQ"
+    filter = {}
+    for line in urllib.request.urlopen(url):
+        line = line.decode('utf-8').strip()
+        gene, lengths = line.split(":")
+        actual, range = lengths.split(';')
+        min, max = range.split(",")
+        filter[gene] = [min, max]
+    for k, v in filter.items():
+        if str(x) in k:
+            if int(v[0]) < x < int(v[1]):
+                return True
+            else:
+                return False
 
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
@@ -192,7 +210,8 @@ for gbids, summaries in searchgen:
 
 print(f"{len(taxids)} unique taxon IDs saved")
 print("Searching GenBank")
-print("Downloading GenBank records for taxon IDs 0 to 100")
+print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
+      f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
 mpc = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6"]
 x = 0
@@ -201,10 +220,8 @@ species = {}
 for tax in taxids:
     y += 1
     if y % 100 == 0:
-        if (y+100) < len(taxids):
-            print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}")
-        else:
-            print(f"Downloading GenBank records for taxon IDs {y + 1} to {len(taxids)}")
+        print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) > len(taxids) else
+              f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
@@ -227,17 +244,19 @@ for tax in taxids:
                         continue
                 sequence = rec[feature.location.start:feature.location.end]
                 output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]
-                if tax in species:                              # If taxon ID in dict
-                    if stdname in species[tax]:                 # If gene in dict for that taxon ID
-                        species[tax][stdname].append(output)    # Add gene info list to dict
-                        writecsv(rec)
+                if seqlength(len(sequence)) == True:
+                    if tax in species:                              # If taxon ID in dict
+                        if stdname in species[tax]:                 # If gene in dict for that taxon ID
+                            species[tax][stdname].append(output)    # Add gene info list to dict
+                            x += 1
+                        else:
+                            species[tax][stdname] = [output]      # Otherwise add to dict with new key
+                        x += 1
+                    else:
+                        species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
                         x += 1
                 else:
-                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
-                    writecsv(rec)
-                    x += 1
-            else:
-                unrecgenes.add(name)
+                    unrecgenes.add(name)
 
 print(f"{str(x)} gene records saved to species dict")
 #print(species)
@@ -249,13 +268,21 @@ if args.mpc:
 print("\nUnrecognised Genes")
 print(unrecgenes)
 
+# Temporary: write dict to file to play with length filter
+#import json
+#with open("testspeciesdict.txt", "w") as file:
+    #file.write(json.dumps(species))
+
+
 # Set first record as max value, iterate through records and replace if another sequence is longer.
+# Record format = [gene, ID, rec.description, type, length, sequence]
 def findmax(x):
     maxrec = x[0]
     for record in x:
         if record[4] > maxrec[4]:
             maxrec = record
     return maxrec
+
 
 # Dict for longest sequences, key is gene stdname, value is list of records
 longest = {}
@@ -273,6 +300,7 @@ for tax, stdname in species.items():
 for gene, records in longest.items():
     file = open(f"{gene}test.fasta", "w")
     for rec in records:
+        writecsv(rec)
         file.write(">" + rec[1] + " " + rec[2] + "\n" + rec[5] + "\n")
 
 
