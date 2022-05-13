@@ -103,24 +103,6 @@ def search_nuc(term, summaries=False, chunk=10000):
             yield gbids, sumrec
 
 
-# Filter sequence length
-# Returns true if sequence is in target range
-def seqlength(x):
-    url = "https://raw.githubusercontent.com/Aileen-S/genbank/main/sequencelength.txt?token=GHSAT0AAAAAABQZX632I3W6OLMRN2TREMRQYT3X2MQ"
-    filter = {}
-    for line in urllib.request.urlopen(url):
-        line = line.decode('utf-8').strip()
-        gene, lengths = line.split(":")
-        actual, range = lengths.split(';')
-        min, max = range.split(",")
-        filter[gene] = [min, max]
-    for k, v in filter.items():
-        if str(x) in k:
-            if int(v[0]) < x < int(v[1]):
-                return True
-            else:
-                return False
-
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
@@ -131,13 +113,12 @@ with open("metadata.csv", "w") as file:     # Open output file
 
 
 # Write row of metadata file
+# Record format = [gene, GBID, TXID, rec.description, organism, taxonomy, type, length, sequence]
 def writecsv(x):                                # x = genbank record
-    gbid  = x.name                              # Get accessions (record.name gives accession, record.id gives version)
-    spe = x.annotations["organism"]             # Get genus/species
-    taxonomy = x.annotations["taxonomy"]        # Get higher taxonomy list
-    row = [gbid, tax, spe, stdname, len(sequence)]                           # New list with accession and species names
-    for level in taxonomy:
+    row = [rec[1], rec[2], rec[4], rec[0], rec[7]]  # [GBID, TXID, species, gene, sequence length]
+    for level in rec[5]:
         row.append(level)                       # Add taxon levels to list
+    print(row)
     with open("metadata.csv", "a") as file:
         writer = csv.writer(file)               # Name writer object
         writer.writerow(row)                    # Write row
@@ -170,7 +151,7 @@ parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuc
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-# args = parser.parse_args('-t Dytiscidae -e '.split(' ')) # This is how I step through the script interactively
+args = parser.parse_args('-t Eretes -e '.split(' ')) # This is how I step through the script interactively
 
 # Get name variants
 nameconvert, types, namevariants = loadnamevariants()
@@ -181,7 +162,8 @@ nameconvert, types, namevariants = loadnamevariants()
 unrecgenes = set()
 
 # Set for mitochondiral non-coding genes (filtered out if -m argument used)
-mncgenes = set()
+#mncgenes = set()
+# Removed this, all non-selected genes now being added to unrecgenes set.
 
 Entrez.email = args.email
 
@@ -237,33 +219,27 @@ for tax in taxids:
             if name in nameconvert:
                 stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
                 if args.mpc:
-                    if stdname in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
-                        pass
-                    else:
-                        mncgenes.add(stdname)
+                    if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
+                        unrecgenes.add(stdname)
                         continue
                 sequence = rec[feature.location.start:feature.location.end]
-                output = [stdname, rec.name, rec.description, type, len(sequence), str(sequence.seq)]
-                if seqlength(len(sequence)) == True:
-                    if tax in species:                              # If taxon ID in dict
-                        if stdname in species[tax]:                 # If gene in dict for that taxon ID
-                            species[tax][stdname].append(output)    # Add gene info list to dict
-                            x += 1
-                        else:
-                            species[tax][stdname] = [output]      # Otherwise add to dict with new key
+                output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"], rec.annotations["taxonomy"],
+                          type, len(sequence), str(sequence.seq)]
+                if tax in species:                              # If taxon ID in dict
+                    if stdname in species[tax]:                 # If gene in dict for that taxon ID
+                        species[tax][stdname].append(output)    # Add gene info list to dict
                         x += 1
                     else:
-                        species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
-                        x += 1
+                        species[tax][stdname] = [output]      # Otherwise add to dict with new key
+                    x += 1
                 else:
-                    unrecgenes.add(name)
+                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                    x += 1
+            else:
+                unrecgenes.add(name)
 
 print(f"{str(x)} gene records saved to species dict")
 #print(species)
-
-if args.mpc:
-    print("\nMitochondrial non-coding genes, not saved:")
-    print(mncgenes)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
@@ -275,7 +251,7 @@ print(unrecgenes)
 
 
 # Set first record as max value, iterate through records and replace if another sequence is longer.
-# Record format = [gene, ID, rec.description, type, length, sequence]
+# Record format = [gene, ID, rec.description, organism, type, length, sequence]
 def findmax(x):
     maxrec = x[0]
     for record in x:
@@ -295,13 +271,14 @@ for tax, stdname in species.items():
             longest[gene] = [new]
 #print(species)
 #print(longest)
-
 # Save each gene list to separate fasta file
+# Record format = [gene, GBID, TXID, rec.description, organism, taxonomy, type, length, sequence]
 for gene, records in longest.items():
     file = open(f"{gene}test.fasta", "w")
     for rec in records:
+        #print(rec)
         writecsv(rec)
-        file.write(">" + rec[1] + " " + rec[2] + "\n" + rec[5] + "\n")
+        file.write(f"(> {rec[1]} {rec[3]}\n{rec[8]}\n)")
 
 
 
