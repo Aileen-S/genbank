@@ -118,7 +118,6 @@ def writecsv(x):                                # x = genbank record
     row = [rec[1], rec[2], rec[4], rec[0], rec[7]]  # [GBID, TXID, species, gene, sequence length]
     for level in rec[5]:
         row.append(level)                       # Add taxon levels to list
-    print(row)
     with open("metadata.csv", "a") as file:
         writer = csv.writer(file)               # Name writer object
         writer.writerow(row)                    # Write row
@@ -151,7 +150,7 @@ parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuc
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-args = parser.parse_args('-t Eretes -e '.split(' ')) # This is how I step through the script interactively
+#args = parser.parse_args('-t Eretes -e '.split(' ')) # This is how I step through the script interactively
 
 # Get name variants
 nameconvert, types, namevariants = loadnamevariants()
@@ -196,6 +195,7 @@ print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 
       f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
 mpc = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6"]
+min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
 x = 0
 y = 0
 species = {}
@@ -223,6 +223,9 @@ for tax in taxids:
                         unrecgenes.add(stdname)
                         continue
                 sequence = rec[feature.location.start:feature.location.end]
+                if stdname in min:
+                    if len(sequence) < min[stdname]:
+                        continue
                 output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"], rec.annotations["taxonomy"],
                           type, len(sequence), str(sequence.seq)]
                 if tax in species:                              # If taxon ID in dict
