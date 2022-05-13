@@ -14,8 +14,6 @@
 
 # TO DO
 # Need to add argparse option to search for specific genes
-# Set min sequence length?
-# Set max sequence length 20000[SLEN]
 # How to include ATP8
 # How to include COX1: USEARCH or manual split after alignment? Filter full length sequences to align separately?
 # Subspecies problem
@@ -202,7 +200,7 @@ species = {}
 for tax in taxids:
     y += 1
     if y % 100 == 0:
-        print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) > len(taxids) else
+        print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
               f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
