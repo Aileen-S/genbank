@@ -5,12 +5,11 @@
 # Separate fasta file for each gene, ready for alignment.
 
 # PROBLEMS
-# Lines from "for rec in record:" : unsure if loop syntax is right. Not saving all sequences.
 # Better way to get taxonomy for CSV?
 # Outdated records. Eg Dytiscinae split into Dytiscinae and Cybistrinae now. Need to manually check each?
 # Possible to add filter to prioritise records with multiple genes, when filtering for length? Better for alignment.
-# Alignment very gappy. Possible outliers, need to find these.
-# Duplicate records in CSV file
+# Alignment very gappy. Alignment problem? Wrong sequences?
+# Not finding all sequences.
 
 # TO DO
 # Need to add argparse option to search for specific genes
@@ -20,7 +19,7 @@
 # Add nuclear genes/16S and name variants
 
 
-#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Agabus -m
+#python3 get_species_list.py -e aileen.scott@nhm.ac.uk -t Eretes -m
 
 
 import argparse
@@ -192,10 +191,12 @@ print("Searching GenBank")
 print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
       f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
+# Set accepted genes and minimum sequence lengths
 mpc = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6"]
 min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
-x = 0
-y = 0
+
+x = 0  # Count taxids
+y = 0  # Count records saved
 species = {}
 for tax in taxids:
     y += 1
@@ -224,8 +225,8 @@ for tax in taxids:
                 if stdname in min:
                     if len(sequence) < min[stdname]:
                         continue
-                output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"], rec.annotations["taxonomy"],
-                          type, len(sequence), str(sequence.seq)]
+                output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"],
+                          rec.annotations["taxonomy"], type, len(sequence), str(sequence.seq)]
                 if tax in species:                              # If taxon ID in dict
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
@@ -239,7 +240,7 @@ for tax in taxids:
             else:
                 unrecgenes.add(name)
 
-print(f"{str(x)} gene records saved to species dict")
+print(f"\n{str(x)} gene records saved to species dict")
 #print(species)
 
 print("\nUnrecognised Genes")
@@ -280,6 +281,4 @@ for gene, records in longest.items():
         #print(rec)
         writecsv(rec)
         file.write(f"(> {rec[1]} {rec[3]}\n{rec[8]}\n)")
-
-
 
