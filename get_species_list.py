@@ -280,5 +280,5 @@ for gene, records in longest.items():
     for rec in records:
         #print(rec)
         writecsv(rec)
-        file.write(f"(> {rec[1]} {rec[3]}\n{rec[8]}\n)")
+        file.write(f"> {rec[1]} {rec[3]}\n{rec[8]}\n")
 
