@@ -3,7 +3,7 @@ Entrez.email = "mixedupvoyage@gmail.com"
 
 
 
-handle = Entrez.egquery(term="Agabus")
+handle = Entrez.egquery(term="Dytiscidae")
 record = Entrez.read(handle)
 for row in record["eGQueryResult"]:
     if row["DbName"]=="nuccore":
@@ -11,16 +11,22 @@ for row in record["eGQueryResult"]:
 print(count)
 
 chunk = 1000
+gi_list = []
 for start in range(0, count, chunk):
-    handle = Entrez.esearch(db="nucleotide", term="Agabus", retstart=start, retmax=chunk)
+    handle = Entrez.esearch(db="nucleotide", term="Dytiscidae", retstart=start, retmax=chunk)
     record = Entrez.read(handle)
-    gi_list = record["IdList"]
-    #print(record["Count"])
-    print(gi_list)
+    for gi in record["IdList"]:
+        gi_list.append(gi)
+    print(len(gi_list))
 
 # Use GIs to download GenBank records
 gi_str = ",".join(gi_list)
+print(gi_str)
 for start in range(0, count, chunk):
     handle = Entrez.efetch(db="nucleotide", id=gi_str, rettype="gb", retmode="text", retstart=start, retmax=chunk) # Need to figure out retstart
-    print(handle.read(), file=open("Agabus.gb", "w"))
+    print(handle.read(), file=open("Dytiscidae.gb", "w"))
 
+GBfile = open("Dytiscidae.gb")
+GBfile = GBfile.read()
+count = GBfile.count("LOCUS")
+print(str(count) + " records found")
