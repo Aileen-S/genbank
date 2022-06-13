@@ -104,20 +104,24 @@ def search_nuc(term, summaries=False, chunk=10000):
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Species", "Gene", "Sequence Length", "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass",
-         "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", "1", "2",
-         "3"])  # Write column names
+        ["Accession", "Taxon ID", "Species", "Date Late Modified", "Gene", "Sequence Length", "Domain", "Kingdom", "Superphylum", "Phylum",
+         "Subphylum", "Class", "Subclass", "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family",
+         "Subfamily", "Tribe", "Country", "Region", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
+         "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])  # Write column names
 
 
 # Write row of metadata file
-# Record format = [gene, GBID, TXID, rec.description, organism, taxonomy, type, length, sequence]
-def writecsv(x):                                # x = genbank record
-    row = [rec[1], rec[2], rec[4], rec[0], rec[7]]  # [GBID, TXID, species, gene, sequence length]
-    for level in rec[5]:
-        row.append(level)                       # Add taxon levels to list
+# output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
+#           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
+def writecsv(x):                                            # x = genbank record output
+    row = [rec[1], rec[2], rec[4], rec[0], rec[8], rec[5]]  # [GBID, TXID, species, gene, sequence length, date]
+    row.extend(rec[6])                                      # [taxonomy 15 levels]
+    row.append(rec[10])                                     # [country]
+    row.append(rec[11])                                     # [region]
+    row.extend(rec[12])                                     # [reference entries list: author, title, journal x3]
     with open("metadata.csv", "a") as file:
-        writer = csv.writer(file)               # Name writer object
-        writer.writerow(row)                    # Write row
+        writer = csv.writer(file)
+        writer.writerow(row)
 
 
 # This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
@@ -147,7 +151,8 @@ parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuc
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-#args = parser.parse_args('-t Eretes -e '.split(' ')) # This is how I step through the script interactively
+#args = argparse.Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
+#Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
 
 # Get name variants
 nameconvert, types, namevariants = loadnamevariants()
@@ -214,9 +219,9 @@ for tax in taxids:
             type = feature.type
             if type not in ('CDS', 'rRNA'):
                 continue  # skip the rest of the current iteration of this loop
-            name = get_feat_name(feature)                       # Use function to search for gene names
-            if name in nameconvert:
-                stdname = nameconvert[name]                    # If gene name in namevariants, convert to standard name
+            name = get_feat_name(feature)                       # Find gene name
+            if name in nameconvert:                             # If gene name not in namevariants, add to unrecgenes
+                stdname = nameconvert[name]                     # If gene name in namevariants, convert to standard name
                 if args.mpc:
                     if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
                         unrecgenes.add(stdname)
@@ -225,8 +230,26 @@ for tax in taxids:
                 if stdname in min:
                     if len(sequence) < min[stdname]:
                         continue
-                output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"],
-                          rec.annotations["taxonomy"], type, len(sequence), str(sequence.seq)]
+                if "country" in rec.features[0].qualifiers:
+                    location = rec.features[0].qualifiers["country"][0]
+                    if ":" in location:
+                        country, region = location.split(":")
+                    else:
+                        country = location
+                        region = "-"
+                else:
+                    country = "-"
+                    region = "-"
+                refs = []
+                for ref in rec.annotations["references"]:
+                    refs.append(ref.authors)
+                    refs.append(ref.title)
+                    refs.append(ref.journal)
+                #print(type(country))
+                output = [stdname, rec.name, tax, rec.description, rec.annotations["organism"], rec.annotations["date"],
+                          rec.annotations["taxonomy"][0:15], type, len(sequence), str(sequence.seq), country, region, refs]
+                # output = gene, GBID, TXID, description, species, date, taxonomy(15 levels), feature type, sequence length, sequence, country, area, references
+                #print(output)
                 if tax in species:                              # If taxon ID in dict
                     if stdname in species[tax]:                 # If gene in dict for that taxon ID
                         species[tax][stdname].append(output)    # Add gene info list to dict
@@ -253,11 +276,12 @@ print(unrecgenes)
 
 
 # Set first record as max value, iterate through records and replace if another sequence is longer.
-# Record format = [gene, ID, rec.description, organism, type, length, sequence]
+# output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
+#           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
 def findmax(x):
     maxrec = x[0]
     for record in x:
-        if record[4] > maxrec[4]:
+        if record[8] > maxrec[8]:
             maxrec = record
     return maxrec
 
@@ -274,11 +298,12 @@ for tax, stdname in species.items():
 #print(species)
 #print(longest)
 # Save each gene list to separate fasta file
-# Record format = [gene, GBID, TXID, rec.description, organism, taxonomy, type, length, sequence]
+# output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
+#           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
 for gene, records in longest.items():
     file = open(f"{gene}test.fasta", "w")
     for rec in records:
         #print(rec)
         writecsv(rec)
-        file.write(f">{rec[1]}\n{rec[8]}\n")
+        file.write(f">{rec[1]}\n{rec[9]}\n")
 
