@@ -21,10 +21,9 @@ for start in range(0, count, chunk):
 
 # Use GIs to download GenBank records
 gi_str = ",".join(gi_list)
-print(gi_str)
 for start in range(0, count, chunk):
     handle = Entrez.efetch(db="nucleotide", id=gi_str, rettype="gb", retmode="text", retstart=start, retmax=chunk) # Need to figure out retstart
-    print(handle.read(), file=open("Dytiscidae.gb", "w"))
+    print(handle.read(), file=open("Dytiscidae.gb", "a"))
 
 GBfile = open("Dytiscidae.gb")
 GBfile = GBfile.read()
