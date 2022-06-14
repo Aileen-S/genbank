@@ -115,6 +115,8 @@ with open("metadata.csv", "w") as file:     # Open output file
 #           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
 def writecsv(x):                                            # x = genbank record output
     row = [rec[1], rec[2], rec[4], rec[0], rec[8], rec[5]]  # [GBID, TXID, species, gene, sequence length, date]
+    while len(rec[6]) <= 14:
+        rec[6].append("-")
     row.extend(rec[6])                                      # [taxonomy 15 levels]
     row.append(rec[10])                                     # [country]
     row.append(rec[11])                                     # [region]
