@@ -303,7 +303,7 @@ for tax, stdname in species.items():
 # output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
 #           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
 for gene, records in longest.items():
-    file = open(f"{gene}test.fasta", "w")
+    file = open(f"{gene}.fa", "w")
     for rec in records:
         #print(rec)
         writecsv(rec)
