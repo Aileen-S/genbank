@@ -154,8 +154,8 @@ parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuc
 
 # Start the actual script
 
-#args = parser.parse_args()         # Process input args from command line
-args = argparse.Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
+args = parser.parse_args()         # Process input args from command line
+#args = argparse.Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 #Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
 
 # Get name variants
