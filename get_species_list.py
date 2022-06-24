@@ -104,7 +104,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description" "Gene", "Sequence Length", "Date Late Modified", "Date Collected", "Domain", "Kingdom", "Superphylum", "Phylum",
+        ["Accession", "Taxon ID", "Description", "Gene", "Sequence Length", "Date Late Modified", "Date Collected", "Domain", "Kingdom", "Superphylum", "Phylum",
          "Subphylum", "Class", "Subclass", "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family",
          "Subfamily", "Tribe", "Species", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])  # Write column names
@@ -112,7 +112,7 @@ with open("metadata.csv", "w") as file:     # Open output file
 
 # Write row of metadata file
 def writecsv(x):                                            # x = genbank record output
-    row = [rec["gbid"], rec["txid"], rec["description"], rec["gene"], rec["rec date"], rec["c date"]]
+    row = [rec["gbid"], rec["txid"], rec["description"], rec["gene"], rec["length"], rec["rec date"], rec["c date"]]
     #while len(rec["taxonomy"]) <= 14:
         #rec[6].append("")
     rec["taxonomy"].extend([""] * (15 - len(rec["taxonomy"])))
@@ -120,7 +120,7 @@ def writecsv(x):                                            # x = genbank record
     row.append(rec["spec"])
     row.append(rec["country"])
     row.append(rec["region"])
-    row.extend(rec["latlon"])
+    row.append(rec["latlon"])
     row.extend(rec["refs"])
 
     with open("metadata.csv", "a") as file:
@@ -245,11 +245,11 @@ for tax in taxids:
                     country = ""
                     region = ""
                 if "lat_lon" in rec.features[0].qualifiers:
-                    latlon = "lat_lon"
+                    latlon = rec.features[0].qualifiers["lat_lon"][0]
                 else:
                     latlon = ""
                 if "collection_date" in rec.features[0].qualifiers:
-                    c_date = "collection_date"
+                    c_date = rec.features[0].qualifiers["collection_date"][0]
                 else:
                     c_date = ""
                 refs = []
