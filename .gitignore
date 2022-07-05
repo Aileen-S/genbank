@@ -2,6 +2,7 @@
 *.txt
 *.gb
 *.fasta
+*.fa
 *.xml
 *.csv
 
