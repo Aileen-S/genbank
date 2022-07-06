@@ -19,7 +19,7 @@
 # Add nuclear genes/16S and name variants
 
 
-#python3 get_species_list.py -e mixedupvoyage@gmail.com -t Eretes -m
+#python3 get_other_genes.py -e mixedupvoyage@gmail.com -t Eretes -g 16s,28s,Wg
 
 
 import argparse
@@ -31,31 +31,6 @@ import textwrap as _textwrap
 from collections import defaultdict
 
 # Function definitions
-
-# Opens url,
-def loadnamevariants():
-    conversion = {}
-    url = "https://raw.githubusercontent.com/tjcreedy/constants/master/gene_name_variants.txt"
-    fullparse = {}
-    alltypes = set()
-    for line in urllib.request.urlopen(url):
-        line = line.decode('utf-8').strip()
-        description, variants = line.split(":")
-        name, annotype, fullname = description.split(";")
-        variants = variants.split(',')
-        variants.extend([name, fullname.upper()])
-
-        fullvariants = []
-        for v in [name] + variants:
-            for g in ['', ' ']:
-                v = v.replace(g, '')
-                for s in ['', ' GENE', ' '+annotype.upper()]:
-                    fullvariants.append(v+s)
-                    conversion[v+s] = name
-
-        alltypes.add(annotype)
-        fullparse[name] = {'type': annotype, 'variants': fullvariants, 'product': fullname}
-    return conversion, alltypes, fullparse
 
 
 def get_feat_name(feat):
@@ -143,12 +118,10 @@ class MultilineFormatter(argparse.HelpFormatter):
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.", formatter_class=MultilineFormatter)
+parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta. Set up for 12S, 16S, 18S, 28S, AK, AS, CAD, EF1A, H3 and Wg", formatter_class=MultilineFormatter)
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
-parser.add_argument("-m", "--mpc", action="store_true", help="Save only mitochondrial protein coding genes")
-#parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest: if not specified, all genes will be retrieved")
+#parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
-parser.add_argument("-n", "--nuclear", action="store_true", help="Search for nuclear as well as mitochondrial genes.")
 # parser.add_argument("-l", "--length", type=str)
 
 
@@ -158,24 +131,30 @@ args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 #Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
 
-# Get name variants
-nameconvert, types, namevariants = loadnamevariants()
+genes = {"12S": ["12S RIBOSOMAL RNA", "12S RRNA"],
+         "16S": ["16S RIBOSOMAL RNA", "16S RRNA"],
+         "18S": ["18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
+         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA"],
+         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
+         "AS": [],
+         "CAD": ["CAD", "CAD FRAGMENT 1"],
+         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPH"],
+         "H3": ["H3"],
+         "Wg": ["WG", "WINGLESS", "WNG", "WNT"]}
 
+#if args.gene:
+#    geneslist = args.gene.split(",")
+#    inputgenes = " OR ".join(geneslist)
 
-# Set up for unrecognised genes
-#unrecgenes = defaultdict(list)
+# To use cli gene option, need to search entrez with list of all name variants.
+
 unrecgenes = set()
-
-# Set for mitochondiral non-coding genes (filtered out if -m argument used)
-#mncgenes = set()
-# Removed this, all non-selected genes now being added to unrecgenes set.
 
 Entrez.email = args.email
 
 # Generate search term to get all sequences in the search taxonomy
 # - if -n option not used, then include "mitochondrial" in search term.
-basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"\
-             f"{'' if args.nuclear else ' AND mitochondrion[filter]'}"
+basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
 
 # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
 # Make the search generator
@@ -201,8 +180,7 @@ print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 
       f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
 # Set accepted genes and minimum sequence lengths
-mpc = ["ATP6", "ATP8", "COX1", "COX2", "COX3", "CYTB", "ND1", "ND2", "ND3", "ND4", "ND4L", "ND5", "ND6"]
-min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
+#min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
 
 x = 0  # Count taxids
 y = 0  # Count records saved
@@ -212,6 +190,7 @@ for tax in taxids:
     if y % 100 == 0:
         print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
               f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
+        print(unrecgenes)
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
@@ -221,68 +200,69 @@ for tax in taxids:
     for rec in record:
         for feature in rec.features:
             type = feature.type
-            if type not in ('CDS', 'rRNA'):
+            if type not in ('CDS', 'rRNA', 'mRNA'):
                 continue  # skip the rest of the current iteration of this loop
             name = get_feat_name(feature)                       # Find gene name
-            if name in nameconvert:                             # If gene name not in namevariants, add to unrecgenes
-                stdname = nameconvert[name]                     # If gene name in namevariants, convert to standard name
-                if args.mpc:
-                    if stdname not in mpc:   # Filter: keep only mitochondrial protein coding genes if -m argument used
-                        unrecgenes.add(stdname)
-                        continue
-                sequence = rec[feature.location.start:feature.location.end]
-                if stdname in min:
-                    if len(sequence) < min[stdname]:
-                        continue
-                if "country" in rec.features[0].qualifiers:
-                    location = rec.features[0].qualifiers["country"][0]
-                    if ":" in location:
-                        country, region = location.split(":")
+            for k, v in genes.items():
+                if name in v:
+                    stdname = k
+                    #if args.gene:
+                        #if name not in geneslist:
+                            #.add(name)
+                            #continue
+                    sequence = rec[feature.location.start:feature.location.end]
+                    #if stdname in min:
+                        #if len(sequence) < min[stdname]:
+                            #continue
+                    if "country" in rec.features[0].qualifiers:
+                        location = rec.features[0].qualifiers["country"][0]
+                        if ":" in location:
+                            country, region = location.split(":")
+                        else:
+                            country = location
+                            region = ""
                     else:
-                        country = location
+                        country = ""
                         region = ""
-                else:
-                    country = ""
-                    region = ""
-                if "lat_lon" in rec.features[0].qualifiers:
-                    latlon = rec.features[0].qualifiers["lat_lon"][0]
-                else:
-                    latlon = ""
-                if "collection_date" in rec.features[0].qualifiers:
-                    c_date = rec.features[0].qualifiers["collection_date"][0]
-                else:
-                    c_date = ""
-                refs = []
-                for ref in rec.annotations["references"]:
-                    refs.append(ref.authors)
-                    refs.append(ref.title)
-                    refs.append(ref.journal)
-                #print(type(country))
-                output = {"gene" : stdname,
-                          "gbid" : rec.name,
-                          "txid" : tax,
-                          "description" : rec.description,
-                          "spec" : rec.annotations["organism"],
-                          "rec date" : rec.annotations["date"],
-                          "c date" : c_date,
-                          "taxonomy" : rec.annotations["taxonomy"][0:15],
-                          "type" : type,
-                          "length" : len(sequence),
-                          "seq" : str(sequence.seq),
-                          "country" : country,
-                          "region" : region,
-                          "latlon" : latlon,
-                          "refs" : refs}
-                if tax in species:                              # If taxon ID in dict
-                    if stdname in species[tax]:                 # If gene in dict for that taxon ID
-                        species[tax][stdname].append(output)    # Add gene info list to dict
+                    if "lat_lon" in rec.features[0].qualifiers:
+                        latlon = rec.features[0].qualifiers["lat_lon"][0]
+                    else:
+                        latlon = ""
+                    if "collection_date" in rec.features[0].qualifiers:
+                        c_date = rec.features[0].qualifiers["collection_date"][0]
+                    else:
+                        c_date = ""
+                    refs = []
+                    for ref in rec.annotations["references"]:
+                        refs.append(ref.authors)
+                        refs.append(ref.title)
+                        refs.append(ref.journal)
+                    #print(type(country))
+                    output = {"gene" : stdname,
+                              "gbid" : rec.name,
+                              "txid" : tax,
+                              "description" : rec.description,
+                              "spec" : rec.annotations["organism"],
+                              "rec date" : rec.annotations["date"],
+                              "c date" : c_date,
+                              "taxonomy" : rec.annotations["taxonomy"][0:15],
+                              "type" : type,
+                              "length" : len(sequence),
+                              "seq" : str(sequence.seq),
+                              "country" : country,
+                              "region" : region,
+                              "latlon" : latlon,
+                              "refs" : refs}
+                    if tax in species:                              # If taxon ID in dict
+                        if stdname in species[tax]:                 # If gene in dict for that taxon ID
+                            species[tax][stdname].append(output)    # Add gene info list to dict
+                            x += 1
+                        else:
+                            species[tax][stdname] = [output]      # Otherwise add to dict with new key
                         x += 1
                     else:
-                        species[tax][stdname] = [output]      # Otherwise add to dict with new key
-                    x += 1
-                else:
-                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
-                    x += 1
+                        species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                        x += 1
             else:
                 unrecgenes.add(name)
 
