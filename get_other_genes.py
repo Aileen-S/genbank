@@ -190,7 +190,6 @@ for tax in taxids:
     if y % 100 == 0:
         print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
               f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
-        print(unrecgenes)
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
@@ -238,6 +237,9 @@ for tax in taxids:
                         refs.append(ref.title)
                         refs.append(ref.journal)
                     #print(type(country))
+                    seq = bytes(sequence.seq)
+                    if seq == "None":
+                        continue
                     output = {"gene" : stdname,
                               "gbid" : rec.name,
                               "txid" : tax,
@@ -248,7 +250,7 @@ for tax in taxids:
                               "taxonomy" : rec.annotations["taxonomy"][0:15],
                               "type" : type,
                               "length" : len(sequence),
-                              "seq" : str(sequence.seq),
+                              "seq" : bytes.decode(seq),
                               "country" : country,
                               "region" : region,
                               "latlon" : latlon,
