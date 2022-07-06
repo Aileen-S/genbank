@@ -19,7 +19,7 @@
 # Add nuclear genes/16S and name variants
 
 
-#python3 get_species_list.py -e mixedupvoyage@gmail.com -t Eretes -m
+#python3 get_mpc_genes.py -e mixedupvoyage@gmail.com -t Eretes -m
 
 
 import argparse
@@ -212,6 +212,7 @@ for tax in taxids:
     if y % 100 == 0:
         print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
               f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
+        print(unrecgenes)
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = record["IdList"]                                         # Get accessions
