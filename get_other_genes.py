@@ -190,9 +190,6 @@ for tax in taxids:
                             #.add(name)
                             #continue
                     sequence = rec[feature.location.start:feature.location.end]
-                    #if stdname in min:
-                        #if len(sequence) < min[stdname]:
-                            #continue
                     if "country" in rec.features[0].qualifiers:
                         location = rec.features[0].qualifiers["country"][0]
                         if ":" in location:
@@ -216,10 +213,6 @@ for tax in taxids:
                         refs.append(ref.authors)
                         refs.append(ref.title)
                         refs.append(ref.journal)
-                    #print(type(country))
-                    seq = bytes(sequence.seq)   # Tried changing to bytes
-                    if seq == "None":           # and skip features with no sequence.
-                        continue                # Still getting "Bio.Seq.UndefinedSequenceError"
                     output = {"gene" : stdname,
                               "gbid" : rec.name,
                               "txid" : tax,
@@ -230,7 +223,7 @@ for tax in taxids:
                               "taxonomy" : rec.annotations["taxonomy"][0:15],
                               "type" : type,
                               "length" : len(sequence),
-                              "seq" : bytes.decode(seq),
+                              "seq" : (sequence.seq),
                               "country" : country,
                               "region" : region,
                               "latlon" : latlon,
