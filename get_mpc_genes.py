@@ -269,7 +269,7 @@ for tax in taxids:
                           "taxonomy" : rec.annotations["taxonomy"][0:15],
                           "type" : type,
                           "length" : len(sequence),
-                          "seq" : str(sequence.seq),
+                          "seq" : feature.extract(sequence),
                           "country" : country,
                           "region" : region,
                           "latlon" : latlon,
