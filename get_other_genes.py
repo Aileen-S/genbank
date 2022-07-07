@@ -8,6 +8,8 @@ import csv
 from Bio import Entrez
 from Bio import SeqIO
 import textwrap as _textwrap
+from Bio.Seq import Seq
+from Bio.SeqFeature import SeqFeature, FeatureLocation
 
 # Function definitions
 
@@ -183,6 +185,7 @@ for tax in taxids:
                 continue  # skip the rest of the current iteration of this loop
             name = get_feat_name(feature)                       # Find gene name
             for k, v in genes.items():
+                stdname = ""
                 if name in v:
                     stdname = k
                     #if args.gene:
@@ -223,7 +226,7 @@ for tax in taxids:
                               "taxonomy" : rec.annotations["taxonomy"][0:15],
                               "type" : type,
                               "length" : len(sequence),
-                              "seq" : (sequence.seq),
+                              "seq" : sequence.seq,
                               "country" : country,
                               "region" : region,
                               "latlon" : latlon,
@@ -238,8 +241,8 @@ for tax in taxids:
                     else:
                         species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
                         x += 1
-            else:
-                unrecgenes.add(name)
+                if stdname == "":
+                    unrecgenes.add(name)
 
 print(f"\n{str(x)} gene records saved to species dict")
 #print(species)
