@@ -1,34 +1,13 @@
-# AIMS
-# Get list of species (db_xref) from GenBank and remove duplicates
-# Make dict: species = {taxonID {gene {records}}}
-# Find longest, extract and save as fasta.
-# Separate fasta file for each gene, ready for alignment.
-
-# PROBLEMS
-# Better way to get taxonomy for CSV?
-# Outdated records. Eg Dytiscinae split into Dytiscinae and Cybistrinae now. Need to manually check each?
-# Possible to add filter to prioritise records with multiple genes, when filtering for length? Better for alignment.
-# Alignment very gappy. Alignment problem? Wrong sequences?
-# Not finding all sequences.
-
-# TO DO
-# Need to add argparse option to search for specific genes
-# How to include ATP8
-# How to include COX1: USEARCH or manual split after alignment? Filter full length sequences to align separately?
-# Subspecies problem
-# Add nuclear genes/16S and name variants
 
 
-#python3 get_other_genes.py -e mixedupvoyage@gmail.com -t Eretes -g 16s,28s,Wg
+#python3 get_other_genes.py -e mixedupvoyage@gmail.com -t Eretes
 
 
 import argparse
-import urllib
 import csv
 from Bio import Entrez
 from Bio import SeqIO
 import textwrap as _textwrap
-from collections import defaultdict
 
 # Function definitions
 
@@ -122,7 +101,6 @@ parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequ
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 #parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
-# parser.add_argument("-l", "--length", type=str)
 
 
 # Start the actual script
@@ -142,11 +120,13 @@ genes = {"12S": ["12S RIBOSOMAL RNA", "12S RRNA"],
          "H3": ["H3"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT"]}
 
+
+# To use cli gene option, need to search entrez with list of all name variants.
+
 #if args.gene:
 #    geneslist = args.gene.split(",")
 #    inputgenes = " OR ".join(geneslist)
 
-# To use cli gene option, need to search entrez with list of all name variants.
 
 unrecgenes = set()
 
@@ -274,11 +254,6 @@ print(f"\n{str(x)} gene records saved to species dict")
 print("\nUnrecognised Genes")
 print(unrecgenes)
 
-# Temporary: write dict to file to play with length filter
-#import json
-#with open("testspeciesdict.txt", "w") as file:
-    #file.write(json.dumps(species))
-
 
 # Set record length as 0, iterate through records and replace whenever another sequence is longer.
 def findmax(x):
@@ -300,8 +275,6 @@ for tax, stdname in species.items():
             longest[gene].append(chosen)
         else:
             longest[gene] = [chosen]
-#print(species)
-#print(longest)
 
 
 # Save each gene list to separate fasta file
