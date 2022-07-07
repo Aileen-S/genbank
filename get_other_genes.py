@@ -217,9 +217,9 @@ for tax in taxids:
                         refs.append(ref.title)
                         refs.append(ref.journal)
                     #print(type(country))
-                    seq = bytes(sequence.seq)
-                    if seq == "None":
-                        continue
+                    seq = bytes(sequence.seq)   # Tried changing to bytes
+                    if seq == "None":           # and skip features with no sequence.
+                        continue                # Still getting "Bio.Seq.UndefinedSequenceError"
                     output = {"gene" : stdname,
                               "gbid" : rec.name,
                               "txid" : tax,
