@@ -226,7 +226,7 @@ for tax in taxids:
                               "taxonomy" : rec.annotations["taxonomy"][0:15],
                               "type" : type,
                               "length" : len(sequence),
-                              "seq" : sequence.seq,
+                              "seq" : feature.extract(rec.seq),
                               "country" : country,
                               "region" : region,
                               "latlon" : latlon,
@@ -277,7 +277,7 @@ for tax, stdname in species.items():
 # output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
 #           8 sequence length, 9 sequence, 10 country, 11 region, 12 references
 for gene, records in longest.items():
-    file = open(f"{gene}.fa", "w")
+    file = open(f"{gene}.fasta", "w")
     for rec in records:
         #print(rec)
         writecsv(rec)
