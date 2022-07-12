@@ -290,20 +290,17 @@ for gene, records in longest.items():
 print("CSV and fastas written to file.")
 # Get outgroup
 
-print("Searching for outgroup.")
+print("Searching genbank for outgroup.")
 
 families = ["Amphizoidae", "Aspidytidae", "Hygrobiidae"]
 for gene, names in genes.items():
     outgroup = []
     accs = []
     genenames = " OR ".join(names)
-    print(genenames)
     for family in families:
-        print(family)
         handle = Entrez.esearch(db="nucleotide", term=f"{family} AND ({genenames})", retmax=5)
         record = Entrez.read(handle)
         accs.extend(record["IdList"][0:4])
-        print(accs)
     accstr = ",".join(accs)
     handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")
     record = SeqIO.parse(handle, "gb")
@@ -320,3 +317,4 @@ for gene, names in genes.items():
     for rec in outgroup:
         writecsv(rec)
         file.write(f">{rec['gbid']}\n{rec['seq']}\n")
+    print("Outgroup appended to csv and fastas.")
