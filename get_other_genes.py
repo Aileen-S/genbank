@@ -55,6 +55,49 @@ def search_nuc(term, summaries=False, chunk=10000):
             sumrec = Entrez.read(sumhand)
             yield gbids, sumrec
 
+# Get record/feature dict from genbank record
+def get_output(rec):
+    sequence = rec[feature.location.start:feature.location.end]
+    if "country" in rec.features[0].qualifiers:
+        location = rec.features[0].qualifiers["country"][0]
+        if ":" in location:
+            country, region = location.split(":")
+        else:
+            country = location
+            region = ""
+    else:
+        country = ""
+        region = ""
+    if "lat_lon" in rec.features[0].qualifiers:
+        latlon = rec.features[0].qualifiers["lat_lon"][0]
+    else:
+        latlon = ""
+    if "collection_date" in rec.features[0].qualifiers:
+        c_date = rec.features[0].qualifiers["collection_date"][0]
+    else:
+        c_date = ""
+    refs = []
+    for ref in rec.annotations["references"]:
+        refs.append(ref.authors)
+        refs.append(ref.title)
+        refs.append(ref.journal)
+    output = {"gene": stdname,
+              "gbid": rec.name,
+              "txid": tax,
+              "description": rec.description,
+              "spec": rec.annotations["organism"],
+              "rec date": rec.annotations["date"],
+              "c date": c_date,
+              "taxonomy": rec.annotations["taxonomy"][0:15],
+              "type": type,
+              "length": len(sequence),
+              "seq": feature.extract(rec.seq),
+              "country": country,
+              "region": region,
+              "latlon": latlon,
+              "refs": refs}
+    return output
+
 
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
@@ -192,45 +235,7 @@ for tax in taxids:
                         #if name not in geneslist:
                             #.add(name)
                             #continue
-                    sequence = rec[feature.location.start:feature.location.end]
-                    if "country" in rec.features[0].qualifiers:
-                        location = rec.features[0].qualifiers["country"][0]
-                        if ":" in location:
-                            country, region = location.split(":")
-                        else:
-                            country = location
-                            region = ""
-                    else:
-                        country = ""
-                        region = ""
-                    if "lat_lon" in rec.features[0].qualifiers:
-                        latlon = rec.features[0].qualifiers["lat_lon"][0]
-                    else:
-                        latlon = ""
-                    if "collection_date" in rec.features[0].qualifiers:
-                        c_date = rec.features[0].qualifiers["collection_date"][0]
-                    else:
-                        c_date = ""
-                    refs = []
-                    for ref in rec.annotations["references"]:
-                        refs.append(ref.authors)
-                        refs.append(ref.title)
-                        refs.append(ref.journal)
-                    output = {"gene" : stdname,
-                              "gbid" : rec.name,
-                              "txid" : tax,
-                              "description" : rec.description,
-                              "spec" : rec.annotations["organism"],
-                              "rec date" : rec.annotations["date"],
-                              "c date" : c_date,
-                              "taxonomy" : rec.annotations["taxonomy"][0:15],
-                              "type" : type,
-                              "length" : len(sequence),
-                              "seq" : feature.extract(rec.seq),
-                              "country" : country,
-                              "region" : region,
-                              "latlon" : latlon,
-                              "refs" : refs}
+                    output = get_output(rec)
                     if tax in species:                              # If taxon ID in dict
                         if stdname in species[tax]:                 # If gene in dict for that taxon ID
                             species[tax][stdname].append(output)    # Add gene info list to dict
@@ -282,4 +287,36 @@ for gene, records in longest.items():
         #print(rec)
         writecsv(rec)
         file.write(f">{rec['gbid']}\n{rec['seq']}\n")
+print("CSV and fastas written to file.")
+# Get outgroup
 
+print("Searching for outgroup.")
+
+families = ["Amphizoidae", "Aspidytidae", "Hygrobiidae"]
+for gene, names in genes.items():
+    outgroup = []
+    accs = []
+    genenames = " OR ".join(names)
+    print(genenames)
+    for family in families:
+        print(family)
+        handle = Entrez.esearch(db="nucleotide", term=f"{family} AND ({genenames})", retmax=5)
+        record = Entrez.read(handle)
+        accs.extend(record["IdList"][0:4])
+        print(accs)
+    accstr = ",".join(accs)
+    handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")
+    record = SeqIO.parse(handle, "gb")
+    for rec in record:
+        for feature in rec.features:
+            name = get_feat_name(feature)  # Find gene name
+            if name in names:
+                stdname = gene
+                output = get_output(rec)
+                outgroup.append(output)
+
+
+    file = open(f"{gene}.fasta", "a")
+    for rec in outgroup:
+        writecsv(rec)
+        file.write(f">{rec['gbid']}\n{rec['seq']}\n")
