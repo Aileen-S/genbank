@@ -151,19 +151,15 @@ parser.add_argument("-e", "--email", type=str, help="Your email registered with 
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-#args = argparse.Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
+#args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 #Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
 
 genes = {"12S": ["12S RIBOSOMAL RNA", "12S RRNA"],
          "16S": ["16S RIBOSOMAL RNA", "16S RRNA"],
          "18S": ["18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
-         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA"],
-         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
-         "AS": [],
-         "CAD": ["CAD", "CAD FRAGMENT 1"],
-         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPH"],
-         "H3": ["H3"],
-         "Wg": ["WG", "WINGLESS", "WNG", "WNT"]}
+         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
+         "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
+         "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
 
 # To use cli gene option, need to search entrez with list of all name variants.
@@ -210,6 +206,7 @@ print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 
 x = 0  # Count taxids
 y = 0  # Count records saved
 species = {}
+sequences = []
 for tax in taxids:
     y += 1
     if y % 100 == 0:
@@ -222,35 +219,44 @@ for tax in taxids:
     handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
     record = SeqIO.parse(handle, "gb")
     for rec in record:
+        if args.taxon not in rec.annotations["taxonomy"]:
+            continue
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA', 'mRNA'):
                 continue  # skip the rest of the current iteration of this loop
             name = get_feat_name(feature)                       # Find gene name
+            stdname = ""
             for k, v in genes.items():
-                stdname = ""
                 if name in v:
                     stdname = k
-                    #if args.gene:
-                        #if name not in geneslist:
-                            #.add(name)
-                            #continue
+            if stdname == "":
+                unrecgenes.add(name)
+                continue
+            else:
+                seq = feature.extract(rec.seq)
+                if seq in sequences:
+                    continue
+                else:
+                    sequences.append(seq)
                     output = get_output(rec)
-                    if tax in species:                              # If taxon ID in dict
-                        if stdname in species[tax]:                 # If gene in dict for that taxon ID
-                            species[tax][stdname].append(output)    # Add gene info list to dict
-                            x += 1
-                        else:
-                            species[tax][stdname] = [output]      # Otherwise add to dict with new key
+                if tax in species:                              # If taxon ID in dict
+                    if stdname in species[tax]:                 # If gene in dict for that taxon ID
+                        species[tax][stdname].append(output)    # Add gene info list to dict
                         x += 1
+
                     else:
-                        species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                        species[tax][stdname] = [output]      # Otherwise add to dict with new key
                         x += 1
-                if stdname == "":
-                    unrecgenes.add(name)
+                else:
+                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                    x += 1
+                break
+
+
+
 
 print(f"\n{str(x)} gene records saved to species dict")
-#print(species)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
@@ -267,16 +273,20 @@ def findmax(x):
     return maxrec
 
 
+
 # Dict for longest sequences, key is gene stdname, value is list of records
 longest = {}
 for tax, stdname in species.items():
+    print(tax)
     for gene, records in stdname.items():
+        print(gene)
         chosen = findmax(records)
         if gene in longest:
             longest[gene].append(chosen)
+            print("add1")
         else:
             longest[gene] = [chosen]
-
+            print("add2")
 
 # Save each gene list to separate fasta file
 # output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
@@ -288,33 +298,6 @@ for gene, records in longest.items():
         writecsv(rec)
         file.write(f">{rec['gbid']}\n{rec['seq']}\n")
 print("CSV and fastas written to file.")
-# Get outgroup
-
-print("Searching genbank for outgroup.")
-
-families = ["Amphizoidae", "Aspidytidae", "Hygrobiidae"]
-for gene, names in genes.items():
-    outgroup = []
-    accs = []
-    genenames = " OR ".join(names)
-    for family in families:
-        handle = Entrez.esearch(db="nucleotide", term=f"{family} AND ({genenames})", retmax=5)
-        record = Entrez.read(handle)
-        accs.extend(record["IdList"][0:4])
-    accstr = ",".join(accs)
-    handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")
-    record = SeqIO.parse(handle, "gb")
-    for rec in record:
-        for feature in rec.features:
-            name = get_feat_name(feature)  # Find gene name
-            if name in names:
-                stdname = gene
-                output = get_output(rec)
-                outgroup.append(output)
 
 
-    file = open(f"{gene}.fasta", "a")
-    for rec in outgroup:
-        writecsv(rec)
-        file.write(f">{rec['gbid']}\n{rec['seq']}\n")
-    print("Outgroup appended to csv and fastas.")
+
