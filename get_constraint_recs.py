@@ -162,7 +162,6 @@ for tax in taxids:
     for rec in record:
         z = 0
         gbid = rec.name
-        print(f"\n{rec.name}")
         if args.taxon not in rec.annotations["taxonomy"]:
             continue
         # Get record output data
@@ -211,7 +210,6 @@ for tax in taxids:
             for k, v in genes.items():
                 if name in v:
                     stdname = k
-                    print(stdname)
             if stdname == "":
                 unrecgenes.add(name)
                 continue
@@ -222,12 +220,12 @@ for tax in taxids:
                 output["genes"][stdname] = {"gene": stdname,
                                             "type": type,
                                             "length": len(seq),
-                                            "seq": gbid}
+                                            "seq": seq}
             else:
                 output["genes"] = {stdname: {"gene": stdname,
                                              "type": type,
                                              "length": len(seq),
-                                             "seq": gbid}}          #Temporarily changed
+                                             "seq": seq}}          #Temporarily changed
         if z >= 3:
             # only save recs with at least 3 genes
             if tax in species:
@@ -242,7 +240,6 @@ for tax in taxids:
                 x += 1
             break
 print(f"\n{str(x)} gene records saved to species dict")
-print(species)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
@@ -288,9 +285,6 @@ for rec in species.values():
                 sequencedict[generec["gene"]][gbid] = generec["seq"]
             else:
                 sequencedict[generec["gene"]] = {gbid: generec["seq"]}
-
-
-print(sequencedict)
 
 for gene, gbids in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
