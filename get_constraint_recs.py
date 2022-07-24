@@ -98,7 +98,7 @@ x = 0
 y = 0
 chunk = 1000
 for start in range(0, count, chunk):
-    print(f"(Downloading GenBank records for taxon IDs {y} to {y+999})" if (y+999) < count else
+    print(f"Downloading GenBank records for taxon IDs {y} to {y+999}" if (y+999) < count else
       f"Downloading GenBank records for taxon IDs {y} to {count}")
     y += 1000
     handle = Entrez.esearch(db="nucleotide", term=args.taxon, retstart=start, retmax=chunk)
@@ -168,19 +168,22 @@ for start in range(0, count, chunk):
                 continue
             else:
                 seq = feature.extract(rec.seq)
-                z += 1
             if "genes" in output:
-                output["genes"][stdname] = {"gene": stdname,
-                                            "type": type,
-                                            "length": len(seq),
-                                            "seq": seq}
+                if stdname not in output["genes"]:
+                    z += 1
+                    output["genes"][stdname] = {"gene": stdname,
+                                                "type": type,
+                                                "length": len(seq),
+                                                "seq": seq}
             else:
+                z += 1
                 output["genes"] = {stdname: {"gene": stdname,
                                              "type": type,
                                              "length": len(seq),
                                              "seq": seq}}
-        if z >= 3:
-            print(f"{gbid} has more than 3 genes.")
+        if z >= 2:
+            output["gene count"] = z
+            print(f"{gbid} has more than 2 genes")
             # only save recs with at least 3 genes
             if tax in species:
                 if gbid in species[tax]:
@@ -194,7 +197,6 @@ for start in range(0, count, chunk):
                 x += 1
         #break
 print(f"\n{str(x)} gene records saved to species dict")
-print(species)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
@@ -203,7 +205,7 @@ print(unrecgenes)
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description",
+        ["Accession", "Taxon ID", "Description", "Gene Count",
          '12S Length', '16S Length', '18S Length', 'EF1A Length', 'H3 Length', 'Wg Length', 'ATP6 Length',
          'ATP8 Length', 'COX1 Length', 'COX2 Length', 'COX3 Length', 'CYTB Length', 'ND1 Length', 'ND2 Length',
          'ND3 Length', 'ND4 Length', 'ND4L Length', 'ND5 Length', 'ND6 Length',
@@ -218,7 +220,7 @@ file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for rec in species.values():
     for gbid, output in rec.items():
-        row = [output["gbid"], output["txid"], output["description"]]
+        row = [output["gbid"], output["txid"], output["description"], output["gene count"]]
         for gene in genes:
             if gene in output["genes"]:
                 row.append(output["genes"][gene]["length"])
