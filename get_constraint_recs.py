@@ -33,29 +33,6 @@ def set_feat_name(feat, name):
                 feat.qualifiers[t][0] = name
     return feat
 
-
-def search_nuc(term, summaries=False, chunk=10000):
-    # Get initial count of responses
-    searchhand = Entrez.esearch(db="nucleotide", term=term, retmax=0)
-    searchrec = Entrez.read(searchhand)
-    count = int(searchrec["Count"])
-    print(str(count) + " records found")
-    # Yield
-    for start in range(0, count, chunk):
-        # Search and get GB IDs
-        searchhand = Entrez.esearch(db="nucleotide", term=term, retstart=start, retmax=chunk)
-        searchrec = Entrez.read(searchhand)
-        gbids = searchrec['IdList']
-        # Yield only GBIDs if no summaries desired
-        if not summaries:
-            yield gbids
-        else:
-            # Retrieve summaries and yield both otherwise
-            sumhand = Entrez.esummary(db="nucleotide", id=','.join(gbids))
-            sumrec = Entrez.read(sumhand)
-            yield gbids, sumrec
-
-
 # This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
 class MultilineFormatter(argparse.HelpFormatter):
     def _fill_text(self, text, width, indent):
@@ -80,8 +57,9 @@ parser.add_argument("-e", "--email", type=str, help="Your email registered with 
 # Start the actual script
 
 args = parser.parse_args()         # Process input args from command line
-#args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
+#args = argparse.Namespace(taxon='Eretes', email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
 #Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
+
 
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA"],
@@ -104,67 +82,42 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6']}
 
 
-# To use cli gene option, need to search entrez with list of all name variants.
-
-#if args.gene:
-#    geneslist = args.gene.split(",")
-#    inputgenes = " OR ".join(geneslist)
-
-
-unrecgenes = set()
 
 Entrez.email = args.email
 
-# Generate search term to get all sequences in the search taxonomy
-# - if -n option not used, then include "mitochondrial" in search term.
-basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
+handle = Entrez.egquery(term=args.taxon)
+record = Entrez.read(handle)
+for row in record["eGQueryResult"]:
+    if row["DbName"]=="nuccore":
+        count = int(row["Count"])
+        print(f"{count} records found.")
 
-# Retrieve all taxids that represent tips of the NCBI Taxonomy tree
-# Make the search generator
-searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
-
-taxids = set()
-i = 0
-for gbids, summaries in searchgen:
-    # gbids, summaries = next(searchgen)
-    i += 1
-    taxa = set(int(s['TaxId']) for s in summaries)
-    taxids.update(taxa)
-    print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
-
-# Some of these will be subspecies.
-# You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
-# Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
-
-
-print(f"{len(taxids)} unique taxon IDs saved")
-print("Searching GenBank")
-print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
-      f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
-
-# Set accepted genes and minimum sequence lengths
-#min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
-
-x = 0  # Count taxids
-y = 0  # Count records saved
 species = {}
-for tax in taxids:
-    y += 1
-    if y % 100 == 0:
-        print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
-              f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
-    handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
+unrecgenes = set()
+x = 0
+y = 0
+chunk = 1000
+for start in range(0, count, chunk):
+    print(f"(Downloading GenBank records for taxon IDs {y} to {y+999})" if (y+999) < count else
+      f"Downloading GenBank records for taxon IDs {y} to {count}")
+    y += 1000
+    handle = Entrez.esearch(db="nucleotide", term=args.taxon, retstart=start, retmax=chunk)
     record = Entrez.read(handle)
-    accs   = record["IdList"]                                         # Get accessions
-    accstr = ",".join(accs)                                           # Join into string for efetch
-    handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
+    gilist = record["IdList"]
+    gi_str = ",".join(gilist)  # Join into string for efetch
+    handle = Entrez.efetch(db="nucleotide", id=gi_str, rettype="gb", retmode="text")  # Get GenBanks
     record = SeqIO.parse(handle, "gb")
+
     for rec in record:
         z = 0
         gbid = rec.name
         if args.taxon not in rec.annotations["taxonomy"]:
             continue
+
         # Get record output data
+        db_xref = str(rec.features[0].qualifiers["db_xref"])
+        if "taxon" in db_xref:
+            tax = "".join(filter(str.isdigit, db_xref))
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
             if ":" in location:
@@ -199,13 +152,13 @@ for tax in taxids:
                   "region": region,
                   "latlon": latlon,
                   "refs": refs}
+
         #Get sequence output data
         for feature in rec.features:
-            #sequence = rec[feature.location.start:feature.location.end]
             type = feature.type
             if type not in ('CDS', 'rRNA', 'mRNA'):
-                continue  # skip the rest of the current iteration of this loop
-            name = get_feat_name(feature)                       # Find gene name
+                continue  # skip to next feature
+            name = get_feat_name(feature)
             stdname = ""
             for k, v in genes.items():
                 if name in v:
@@ -225,8 +178,9 @@ for tax in taxids:
                 output["genes"] = {stdname: {"gene": stdname,
                                              "type": type,
                                              "length": len(seq),
-                                             "seq": seq}}          #Temporarily changed
+                                             "seq": seq}}
         if z >= 3:
+            print(f"{gbid} has more than 3 genes.")
             # only save recs with at least 3 genes
             if tax in species:
                 if gbid in species[tax]:
@@ -238,8 +192,9 @@ for tax in taxids:
             else:
                 species[tax] = {gbid: output}
                 x += 1
-            break
+        #break
 print(f"\n{str(x)} gene records saved to species dict")
+print(species)
 
 print("\nUnrecognised Genes")
 print(unrecgenes)
@@ -251,7 +206,7 @@ with open("metadata.csv", "w") as file:     # Open output file
         ["Accession", "Taxon ID", "Description",
          '12S Length', '16S Length', '18S Length', 'EF1A Length', 'H3 Length', 'Wg Length', 'ATP6 Length',
          'ATP8 Length', 'COX1 Length', 'COX2 Length', 'COX3 Length', 'CYTB Length', 'ND1 Length', 'ND2 Length',
-         'ND3 Length', 'ND4 Length', 'ND4L Length', 'ND5 Length', 'ND6 Length'
+         'ND3 Length', 'ND4 Length', 'ND4L Length', 'ND5 Length', 'ND6 Length',
          "Date Late Modified", "Date Collected", "Domain", "Kingdom", "Superphylum", "Phylum",
          "Subphylum", "Class", "Subclass", "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family",
          "Subfamily", "Tribe", "Species", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
