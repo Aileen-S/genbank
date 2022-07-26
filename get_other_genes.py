@@ -1,18 +1,14 @@
 
-
 #python3 get_other_genes.py -e mixedupvoyage@gmail.com -t Eretes
-
 
 import argparse
 import csv
 from Bio import Entrez
 from Bio import SeqIO
 import textwrap as _textwrap
-from Bio.Seq import Seq
-from Bio.SeqFeature import SeqFeature, FeatureLocation
+
 
 # Function definitions
-
 
 def get_feat_name(feat):
     featname = "unknown"
@@ -54,6 +50,7 @@ def search_nuc(term, summaries=False, chunk=10000):
             sumhand = Entrez.esummary(db="nucleotide", id=','.join(gbids))
             sumrec = Entrez.read(sumhand)
             yield gbids, sumrec
+
 
 # Get record/feature dict from genbank record
 def get_output(rec):
@@ -154,13 +151,12 @@ args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 #Namespace(taxon='Eretes', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False)
 
-genes = {"12S": ["12S RIBOSOMAL RNA", "12S RRNA"],
-         "16S": ["16S RIBOSOMAL RNA", "16S RRNA"],
-         "18S": ["18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA"],
+         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
          "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
          "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
-
 
 # To use cli gene option, need to search entrez with list of all name variants.
 
@@ -254,8 +250,6 @@ for tax in taxids:
                 break
 
 
-
-
 print(f"\n{str(x)} gene records saved to species dict")
 
 print("\nUnrecognised Genes")
@@ -277,16 +271,12 @@ def findmax(x):
 # Dict for longest sequences, key is gene stdname, value is list of records
 longest = {}
 for tax, stdname in species.items():
-    print(tax)
     for gene, records in stdname.items():
-        print(gene)
         chosen = findmax(records)
         if gene in longest:
             longest[gene].append(chosen)
-            print("add1")
         else:
             longest[gene] = [chosen]
-            print("add2")
 
 # Save each gene list to separate fasta file
 # output = 0 gene, 1 GBID, 2 TXID, 3 description, 4 species, 5 date, 6 taxonomy(15 levels), 7 feature type,
