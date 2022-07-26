@@ -5,9 +5,7 @@ import csv
 from Bio import Entrez
 from Bio import SeqIO
 import textwrap as _textwrap
-from Bio.Seq import Seq
-from Bio.SeqFeature import SeqFeature, FeatureLocation
-Entrez.email = "mixedupvoyage@gmail.com"
+
 
 # Function definitions
 
@@ -74,19 +72,16 @@ parser = argparse.ArgumentParser(description="Fetch metadata and fastas from spe
                                              "-f flag.", formatter_class=MultilineFormatter)
 parser.add_argument("-r", "--ref", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
-#parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 args = parser.parse_args()
-
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
-
 
 
 # Gene name variants dict
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA"],
          "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
-         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
+         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA", "EF-1A"],
          "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
@@ -147,9 +142,10 @@ sequences = []
 for rec in record:
     x += 1
     gbid = rec.name
-    db_xref = str(rec.features[0].qualifiers["db_xref"])
-    if "taxon" in db_xref:                                  # Get NCBI taxon, rather than BOLD cross ref
-        tax = "".join(filter(str.isdigit, db_xref))         # Extract numbers from NCBI taxon value
+    db_xref = rec.features[0].qualifiers["db_xref"]
+    for ref in db_xref:
+        if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
+            tax = "".join(filter(str.isdigit, ref))         # Extract numbers from NCBI taxon value
     if "country" in rec.features[0].qualifiers:
         location = rec.features[0].qualifiers["country"][0]
         if ":" in location:
