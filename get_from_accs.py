@@ -1,4 +1,4 @@
-# Copied from get_other_genes and not fully modified. Not working yet.
+# python3 get_from_accs.py -e mixedupvoyage@gmail.com -f test.txt
 
 import argparse
 import csv
@@ -75,7 +75,7 @@ parser.add_argument("-f", "--file", type=str, help="Text file containing list of
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 args = parser.parse_args()
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
-
+Entrez.email = args.email
 
 # Gene name variants dict
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
@@ -142,6 +142,8 @@ sequences = []
 for rec in record:
     x += 1
     gbid = rec.name
+    spec = rec.annotations["organism"]
+    taxonomy = rec.annotations["taxonomy"][0:15]
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
@@ -203,9 +205,10 @@ for rec in record:
             row1.append(feats[g])
         else:
             row1.append("")
-    for t in rec.annotations["taxonomy"][1:15]:
+    taxonomy.extend([""] * (15 - len(taxonomy)))
+    for t in taxonomy:
         row1.append(t)
-    row2 = [country, region, latlon, rec.annotations["date"], c_date]
+    row2 = [spec, country, region, latlon, rec.annotations["date"], c_date]
     for r in refs:
         row2.append(r)
     row = row1 + row2
