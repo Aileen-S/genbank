@@ -1,4 +1,8 @@
-# python3 get_from_accs.py -e mixedupvoyage@gmail.com -f test.txt
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -x
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -x -l txid2770180,txid2770181,txid2770182
+# Get genbanks from list of GenBank ID numbers, accessions or taxon IDs.
+# Have not added chuck search: only retrieves up to 10,000 records.
+
 
 import argparse
 import csv
@@ -70,8 +74,9 @@ class MultilineFormatter(argparse.HelpFormatter):
 parser = argparse.ArgumentParser(description="Fetch metadata and fastas from specified GenBank accession/ID numbers. "
                                              "Input refs either in command with -r flag, or listed in text file using "
                                              "-f flag.", formatter_class=MultilineFormatter)
-parser.add_argument("-r", "--ref", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
+parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
+parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 args = parser.parse_args()
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
@@ -101,20 +106,6 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
 gen = ['12S', '16S', '18S', 'EF1A', 'H3', 'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
 
-# Get IDs from argparse input
-if args.ref:
-    id_str = args.ref
-    
-if args.file:
-    ids = []
-    file = open(args.file)
-    lines = file.readlines()
-    for line in lines:
-        line.strip()
-        ids.append(line)
-        id_str = ",".join(ids)
-
-
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
@@ -134,6 +125,42 @@ sequencedict = {}
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
 x = 0  # Count records added to species dict.
+
+# Get IDs from argparse input
+
+if args.txid:
+    # Get taxon IDs from command line input list format txid1,txid2,txid3
+    if args.list:
+        txids = args.list.split(",")
+    # Get taxon IDs from file
+    if args.file:
+        if args.file:
+            file = open(args.file)
+            txids = file.readlines()
+    # Search GenBank for txids and return list of accessions.
+    ids = []
+    for txid in txids:
+        handle = Entrez.esearch(db="nucleotide", term=f"{txid}[Orgn]", rettype="gb", retmode="text",
+                                retmax=10000)  # Get GenBanks
+        record = Entrez.read(handle)
+        ids = ids + record["IdList"]  # Get list of accessions
+        id_str = ",".join(ids)
+
+else:
+    if args.list:
+        id_str = args.list
+
+    if args.file:
+        ids = []
+        file = open(args.file)
+        lines = file.readlines()
+        for line in lines:
+            line.strip()
+            ids.append(line)
+            id_str = ",".join(ids)
+
+
+
 
 # Fetch records from GenBank
 handle = Entrez.efetch(db="nucleotide", id=id_str, rettype="gb", retmode="text")  # Get GenBanks
