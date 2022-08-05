@@ -1,6 +1,6 @@
 
 
-#python3 get_other_genes.py -e mixedupvoyage@gmail.com -t Eretes
+# python3 get_constraint_recs.py -e mixedupvoyage@gmail.com -t Eretes -n 2
 
 
 import argparse
@@ -48,8 +48,9 @@ class MultilineFormatter(argparse.HelpFormatter):
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta. Set up for 12S, 16S, 18S, 28S, AK, AS, CAD, EF1A, H3 and Wg", formatter_class=MultilineFormatter)
+parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences for records with at least specified number of genes from gene dict.", formatter_class=MultilineFormatter)
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
+parser.add_argument("-n", "--number", type=int, help="Set minimum number of genes (from gene dict) required before record is saved")
 #parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
@@ -115,9 +116,10 @@ for start in range(0, count, chunk):
             continue
 
         # Get record output data
-        db_xref = str(rec.features[0].qualifiers["db_xref"])
-        if "taxon" in db_xref:
-            tax = "".join(filter(str.isdigit, db_xref))
+        db_xref = rec.features[0].qualifiers["db_xref"]
+        for ref in db_xref:
+            if "taxon" in ref:
+                tax = "".join(filter(str.isdigit, ref))
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
             if ":" in location:
@@ -181,10 +183,9 @@ for start in range(0, count, chunk):
                                              "type": type,
                                              "length": len(seq),
                                              "seq": seq}}
-        if z >= 2:
-            output["gene count"] = z
-            print(f"{gbid} has more than 2 genes")
-            # only save recs with at least 3 genes
+        if z >= args.number:
+            output["gene count"] = z # Only save recs with at least specified number of genes
+            #print(f"{gbid} has more than {args.number} gene(s)")
             if tax in species:
                 if gbid in species[tax]:
                     species[tax][gbid].append(output)
@@ -195,7 +196,8 @@ for start in range(0, count, chunk):
             else:
                 species[tax] = {gbid: output}
                 x += 1
-        #break
+
+
 print(f"\n{str(x)} gene records saved to species dict")
 
 print("\nUnrecognised Genes")
