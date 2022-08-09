@@ -77,7 +77,9 @@ parser = argparse.ArgumentParser(description="Fetch metadata and fastas from spe
 parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
+parser.add_argument("-i", "--txidoutput", action="store_true", help="Print taxon ID rather than accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
+
 args = parser.parse_args()
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
 Entrez.email = args.email
@@ -168,13 +170,16 @@ record = SeqIO.parse(handle, "gb")
 sequences = []
 for rec in record:
     x += 1
-    gbid = rec.name
     spec = rec.annotations["organism"]
     taxonomy = rec.annotations["taxonomy"][0:15]
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
             tax = "".join(filter(str.isdigit, ref))         # Extract numbers from NCBI taxon value
+    if args.txidoutput:          # If txidoutput argument used, identify records by TXID rather than accession.
+        rec_id = tax
+    else:
+        rec_id = rec.name
     if "country" in rec.features[0].qualifiers:
         location = rec.features[0].qualifiers["country"][0]
         if ":" in location:
@@ -198,7 +203,7 @@ for rec in record:
         refs.append(ref.authors)
         refs.append(ref.title)
         refs.append(ref.journal)
-    row1 = [gbid, tax, rec.description]          # Start row of metadata for CSV
+    row1 = [rec_id, tax, rec.description]          # Start row of metadata for CSV
 
     # Get sequences for fastas and csv
     feats = {}                                      # Gene length dict for metadata
@@ -217,10 +222,10 @@ for rec in record:
         else:
             seq = feature.extract(rec.seq)
         if stdname in sequencedict:                 # Save sequences for fasta
-            if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                sequencedict[stdname][gbid] = seq
+            if rec_id not in sequencedict[stdname]:   # Avoid duplicate gene records
+                sequencedict[stdname][rec_id] = seq
         else:
-            sequencedict[stdname] = {gbid: seq}
+            sequencedict[stdname] = {rec_id: seq}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
 
@@ -245,11 +250,11 @@ for rec in record:
 print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
-for gene, gbids in sequencedict.items():
+for gene, ids in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
-    for gbid, seq in gbids.items():
-        file.write(f">{gbid} {gene}\n{seq}\n")
-    print(f"{len(gbids)} {gene} records saved to {gene}.fasta")
+    for rec_id, seq in ids.items():
+        file.write(f">{rec_id}\n{seq}\n")
+    print(f"{len(ids)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
 
 
