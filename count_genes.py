@@ -114,8 +114,6 @@ for tax in taxids:
             continue
         if len(rec.annotations["taxonomy"]) >= 14:
             subfamily = rec.annotations["taxonomy"][13]
-        else:
-            subfamily = undefined
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA', 'mRNA'):
