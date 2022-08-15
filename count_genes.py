@@ -112,7 +112,10 @@ for tax in taxids:
     for rec in record:
         if args.taxon not in rec.annotations["taxonomy"]:
             continue
-        subfamily = rec.annotations["taxonomy"][13]
+        if len(rec.annotations["taxonomy"]) >= 14:
+            subfamily = rec.annotations["taxonomy"][13]
+        else:
+            subfamily = undefined
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA', 'mRNA'):
@@ -120,14 +123,19 @@ for tax in taxids:
             name = get_feat_name(feature)                       # Find gene name
             if name in genes:
                 genes[name]["total"].append(rec.name)
-                if subfamily in genes[name]:
-                    genes[name][subfamily].append(rec.name)
-                else:
-                    genes[name][subfamily] = [rec.name]
+                try:
+                    if subfamily in genes[name]:
+                        genes[name][subfamily].append(rec.name)
+                    else:
+                        genes[name][subfamily] = [rec.name]
+                except:
+                    print(f"{rec.name} subfamily undefined")
             else:
                 genes[name] = {"total": [rec.name]}
-                genes[name][subfamily] = [rec.name]
-
+                try:
+                    genes[name][subfamily] = [rec.name]
+                except:
+                    print(f"{rec.name} subfamily undefined")
 print(genes)
 
 subfamilies = ['Agabinae', 'Colymbetinae', 'Copelatinae', 'Coptotominae', 'Cybistrinae', 'Dytiscinae', 'Hydrodytinae',
