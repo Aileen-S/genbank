@@ -103,24 +103,24 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "ND4": ['NAD4', 'NSD4', 'NADH4', 'NADH DEHYDROGENASE SUBUNIT IV', 'NADH DEHYDROGENASE SUBUNIT 4', 'NADH DESHYDROGENASE SUBUNIT 4', 'NAD4-0', 'ND4'],
          "ND4L": ['NAD4L', 'NSD4L', 'NADH4L', 'NADH DEHYDROGENASE SUBUNIT IVL', 'NADH DEHYDROGENASE SUBUNIT 4L', 'NADH DESHYDROGENASE SUBUNIT 4L', 'NAD4L-0', 'ND4L'],
          "ND5": ['NAD5', 'NSD5', 'NADH5', 'NADH DEHYDROGENASE SUBUNIT V', 'NADH DEHYDROGENASE SUBUNIT 5', 'NADH DESHYDROGENASE SUBUNIT 5', 'NAD5-0', 'ND5'],
-         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6']}
+         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6'],
+         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA"],
+         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
+         "CAD": ["CAD", "CAD FRAGMENT 1"]
+         }
 
 gen = ['12S', '16S', '18S', 'EF1A', 'H3', 'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
-
 
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description", "Gene Count",
-         '12S Length', '16S Length', '18S Length', 'EF1A Length', 'H3 Length', 'Wg Length', 'ATP6 Length',
-         'ATP8 Length', 'COX1 Length', 'COX2 Length', 'COX3 Length', 'CYTB Length', 'ND1 Length', 'ND2 Length',
-         'ND3 Length', 'ND4 Length', 'ND4L Length', 'ND5 Length', 'ND6 Length',
-         "Domain", "Kingdom", "Superphylum", "Phylum",
+        ["Accession", "Taxon ID", "Description", "Gene Count", "28S", "AK", "CAD", '12S', '16S', '18S', 'EF1A', 'H3',
+         'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+         "Date Late Modified", "Date Collected", "Domain", "Kingdom", "Superphylum", "Phylum",
          "Subphylum", "Class", "Subclass", "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family",
-         "Subfamily", "Tribe", "Species", "Country", "Region", "Lat/Long", "Date Late Modified", "Date Collected",
-         "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author",
-         "Ref3 Title", "Ref3 Journal"])
+         "Subfamily", "Tribe", "Species", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
+         "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
 unrecgenes = set()
 sequencedict = {}
@@ -238,6 +238,8 @@ for rec in record:
         else:
             row1.append("")
     taxonomy.extend([""] * (15 - len(taxonomy)))
+    if taxonomy[14] == "Cybistrini":
+        taxonomy[13] = "Cybistrinae"
     for t in taxonomy:
         row1.append(t)
     row2 = [spec, country, region, latlon, rec.annotations["date"], c_date]

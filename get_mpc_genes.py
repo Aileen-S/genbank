@@ -116,6 +116,8 @@ def writecsv(x):                                            # x = genbank record
     #while len(rec["taxonomy"]) <= 14:
         #rec[6].append("")
     rec["taxonomy"].extend([""] * (15 - len(rec["taxonomy"])))
+    if rec["taxonomy"][14] == "Cybistrini":
+        rec["taxonomy"][13] = "Cybistrinae"
     row.extend(rec["taxonomy"])
     row.append(rec["spec"])
     row.append(rec["country"])

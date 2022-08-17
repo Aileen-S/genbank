@@ -1,6 +1,6 @@
 
 
-# python3 get_constraint_recs.py -e mixedupvoyage@gmail.com -t Eretes -n 2
+# python3 get_constraint_recs.py -e mixedupvoyage@gmail.com -t Megadytes -n 1
 
 
 import argparse
@@ -63,8 +63,8 @@ args = parser.parse_args()         # Process input args from command line
 
 
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA"],
-         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
+         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
          "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
          "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"],
@@ -73,15 +73,18 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1'],
          "COX2": ['CYTOCHROME C OXIDASE SUBUNIT 2', 'CYTOCHROME OXIDASE SUBUNIT II', 'CYTOCHROME C OXIDASE SUBUNIT II', 'COXII', 'CO2', 'COII', 'CYTOCHROME COXIDASE SUBUNIT II', 'CYTOCHROME OXIDASE SUBUNIT 2', 'CYTOCHROME OXYDASE SUBUNIT 2', 'COX2'],
          "COX3": ['CYTOCHROME C OXIDASE SUBUNIT 3', 'CYTOCHROME OXIDASE SUBUNIT III', 'CYTOCHROME C OXIDASE SUBUNIT III', 'COXII', 'CO3', 'COIII', 'CYTOCHROME COXIDASE SUBUNIT III', 'CYTOCHROME OXIDASE SUBUNIT 3', 'CYTOCHROME OXYDASE SUBUNIT 3', 'COX3'],
-         "CYTB": ['CYTOCHROME B', 'CYB', 'COB', 'COB / CYTB', 'CYTB'],
+         "CYTB": ['CYTOCHROME B', 'CYB', 'COB', 'COB / CYTB', 'CYTB', "COB/CYTB"],
          "ND1": ['NAD1', 'NSD1', 'NADH1', 'NADH DEHYDROGENASE SUBUNIT I', 'NADH DEHYDROGENASE SUBUNIT 1', 'NADH DESHYDROGENASE SUBUNIT 1', 'NAD1-0', 'ND1'],
          "ND2": ['NAD2', 'NSD2', 'NADH2', 'NADH DEHYDROGENASE SUBUNIT II', 'NADH DEHYDROGENASE SUBUNIT 2', 'NADH DESHYDROGENASE SUBUNIT 2', 'NAD2-0', 'ND2'],
          "ND3": ['NAD3', 'NSD3', 'NADH3', 'NADH DEHYDROGENASE SUBUNIT III', 'NADH DEHYDROGENASE SUBUNIT 3', 'NADH DESHYDROGENASE SUBUNIT 3', 'NAD3-0', 'ND3'],
          "ND4": ['NAD4', 'NSD4', 'NADH4', 'NADH DEHYDROGENASE SUBUNIT IV', 'NADH DEHYDROGENASE SUBUNIT 4', 'NADH DESHYDROGENASE SUBUNIT 4', 'NAD4-0', 'ND4'],
          "ND4L": ['NAD4L', 'NSD4L', 'NADH4L', 'NADH DEHYDROGENASE SUBUNIT IVL', 'NADH DEHYDROGENASE SUBUNIT 4L', 'NADH DESHYDROGENASE SUBUNIT 4L', 'NAD4L-0', 'ND4L'],
          "ND5": ['NAD5', 'NSD5', 'NADH5', 'NADH DEHYDROGENASE SUBUNIT V', 'NADH DEHYDROGENASE SUBUNIT 5', 'NADH DESHYDROGENASE SUBUNIT 5', 'NAD5-0', 'ND5'],
-         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6']}
-
+         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6'],
+         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA"],
+         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
+         "CAD": ["CAD", "CAD FRAGMENT 1", "CARBAMOYLPHOSPHATE SYNTHETASE"],
+         "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"]}
 
 
 Entrez.email = args.email
@@ -112,8 +115,8 @@ for start in range(0, count, chunk):
     for rec in record:
         z = 0
         gbid = rec.name
-        if args.taxon not in rec.annotations["taxonomy"]:
-            continue
+        #if args.taxon not in rec.annotations["taxonomy"]:
+        #    continue
 
         # Get record output data
         db_xref = rec.features[0].qualifiers["db_xref"]
@@ -207,16 +210,14 @@ print(unrecgenes)
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description", "Gene Count",
-         '12S Length', '16S Length', '18S Length', 'EF1A Length', 'H3 Length', 'Wg Length', 'ATP6 Length',
-         'ATP8 Length', 'COX1 Length', 'COX2 Length', 'COX3 Length', 'CYTB Length', 'ND1 Length', 'ND2 Length',
-         'ND3 Length', 'ND4 Length', 'ND4L Length', 'ND5 Length', 'ND6 Length',
+        ["Accession", "Taxon ID", "Description", "Gene Count", "28S", "AK", "CAD", '12S', '16S', '18S', 'EF1A', 'H3',
+         'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
          "Date Late Modified", "Date Collected", "Domain", "Kingdom", "Superphylum", "Phylum",
          "Subphylum", "Class", "Subclass", "Infraclass", "Superorder", "Order", "Suborder", "Superfamily", "Family",
          "Subfamily", "Tribe", "Species", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
          "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-genes = ['12S', '16S', '18S', 'EF1A', 'H3', 'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+genes = ['28S', 'AK', 'CAD', '12S', '16S', '18S', 'EF1A', 'H3', 'Wg', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 sequencedict = {}
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
@@ -232,6 +233,8 @@ for rec in species.values():
         row.append(output["rec date"])
         row.append(output["c date"])
         output["taxonomy"].extend([""] * (15 - len(output["taxonomy"])))
+        if output["taxonomy"][14] == "Cybistrini":
+            output["taxonomy"][13] = "Cybistrinae"
         row.extend(output["taxonomy"])
         row.append(output["spec"])
         row.append(output["country"])
