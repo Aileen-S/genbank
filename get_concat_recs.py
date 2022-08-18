@@ -57,9 +57,9 @@ def search_nuc(term, summaries=False, chunk=10000):
 
 # Argument parser
 # Add option to find only mito genes, or only selected genes.
-# Add option to save fastas with either gbid or txid
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
+parser.add_argument('-f', '--fasta', type=str, choices=['txid', 'gbid'], help='Choose either taxon id or genbank id as ref in fasta files.')
 #parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
@@ -179,7 +179,7 @@ for tax in taxids:
                 if name in v:
                     stdname = k
             if stdname == "":
-                unrecgenes.add(name)
+                unrec_genes.add(name)
                 continue
             else:
                 seq = feature.extract(rec.seq)
@@ -300,7 +300,7 @@ for gene, records in longest.items():
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     for rec in records:
-        file.write(f">{rec['txid']}\n{rec['seq']}\n")
+        file.write(f">{rec[args.fasta]}\n{rec['seq']}\n")
 print("CSV and fastas written to file.")
 
 
