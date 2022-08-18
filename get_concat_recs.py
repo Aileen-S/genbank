@@ -282,10 +282,16 @@ for gene, records in longest.items():
         if output["taxonomy"][14] == "Cybistrini":
             output["taxonomy"][13] = "Cybistrinae"
         row.extend(output["taxonomy"])
-        genus = output['spec'].split(' ')
+        gen_spec = output['spec'].split(' ')
+        genus = gen_spec[0]
+        print(genus)
         for k, v in subgenus.items():
-            if genus[0] in v:
+            print(v)
+            if genus in v:
                 genus = k
+                print("yes")
+            else:
+                print("no")
         row.append(genus)
         row.append(output["spec"])
         row.append(output["rec date"])
