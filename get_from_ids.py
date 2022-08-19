@@ -1,4 +1,4 @@
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -f txid
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i txid
 # python3 get_from_ids.py -e mixedupvoyage@gmail.com -x -l txid2770180,txid2770181,txid2770182
 # Get genbanks from list of GenBank ID numbers, accessions or taxon IDs.
 # Have not added chuck search: only retrieves up to 10,000 records.
@@ -77,10 +77,15 @@ parser = argparse.ArgumentParser(description="Fetch metadata and fastas from spe
 parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
-parser.add_argument('-i', '--fasta_id', type=str, choices=['txid', 'gbid'], help='Choose either taxon id or genbank id as ref in fasta files.')
+parser.add_argument('-i', '--fasta_id', action="store_true", help="Print taxon ID rather than accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 args = parser.parse_args()
+
+if args.fasta_id is None:
+    print("Output for fasta IDs not specified. Please choose '-i txid' for taxon ID or '-i gbid' for GenBank Accession number.")
+    exit()
+
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
 Entrez.email = args.email
 
@@ -236,9 +241,9 @@ for rec in record:
             seq = feature.extract(rec.seq)
         if stdname in sequencedict:                 # Save sequences for fasta
             if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                sequencedict[stdname][gbid] = seq
+                sequencedict[stdname][gbid] = [txid, seq]
         else:
-            sequencedict[stdname] = {gbid: seq}
+            sequencedict[stdname] = {gbid: [txid, seq]}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
 
@@ -267,11 +272,15 @@ for rec in record:
 print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
-for gene, ids in sequencedict.items():
+for gene, records in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
-    for rec_id, seq in ids.items():
-        file.write(f">{args.fasta_id}\n{seq}\n")
-    print(f"{len(ids)} {gene} records saved to {gene}.fasta")
+    for acc, rec in records.items():
+        if args.fasta_id:
+            f_id = rec[0]
+        else:
+            f_id = acc
+        file.write(f">{f_id}\n{rec[1]}\n")
+    print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
 
 
