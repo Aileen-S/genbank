@@ -1,15 +1,13 @@
 from Bio import SeqIO
 import argparse
 
+
 parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs.")
 parser.add_argument("-i", "--input", type=str, help="Taxon of interest")
 parser.add_argument("-f", "--filter", type=str, help="Taxon of interest")
 parser.add_argument("-o", "--output", type=str, help="Taxon of interest")
-args = parser.parse_args()         # Process input args from command line
+args = parser.parse_args()
 
-input_file = "COX1.fasta"
-id_file = "test.txt"
-output_file = "ouput.fasta"
 
 with open(args.filter) as id_handle:
     wanted = set(line.rstrip("\n").split(None, 1)[0] for line in id_handle)
