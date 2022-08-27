@@ -1,7 +1,7 @@
 from Bio import SeqIO
 import argparse
 
-parser = argparse.ArgumentParser(description="Search GenBank, retrive gene sequences and save as fasta.")
+parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs.")
 parser.add_argument("-i", "--input", type=str, help="Taxon of interest")
 parser.add_argument("-f", "--filter", type=str, help="Taxon of interest")
 parser.add_argument("-o", "--output", type=str, help="Taxon of interest")
