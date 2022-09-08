@@ -91,6 +91,14 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
+subtribes = {'Deronectina': ['Amurodytes', 'Boreonectes', 'Clarkhydrus', 'Deronectes', 'Deuteronectes', 'Hornectes', 'Iberonectes',
+                             'Larsonectes', 'Leconectes', 'Mystonectes', 'Nebrioporus', 'Nectoboreus', 'Nectomimus', 'Nectoporus',
+                             'Neonectes', 'Oreodytes', 'Scarodytes', 'Stictotarsus', 'Trichonectes', 'Zaitzevhydrus'],
+             'Hydroporina': ['Haideoporus', 'Heterosternuta', 'Hydrocolus', 'Hydroporus', 'Neoporus', 'Sanfilippodytes'],
+             'Siettitiina': ['Ereboporus', 'Etruscodytes', 'Graptodytes', 'Iberoporus', 'Lioporeus', 'Metaporus', 'Porhydrus',
+                             'Psychopomporus', 'Rhithrodytes', 'Siettitia', 'Stictonectes', 'Stygoporus'],
+             'Sternopriscina': ['Antiporus', 'Barretthydrus', 'Brancuporus', 'Carabhydrus', 'Chostonectes', 'Megaporus',
+                                'Necterosoma', 'Paroster', 'Sekaliporus', 'Sternopriscus', 'Tiporus']}
 
 unrec_genes = set()
 unrec_species = []
@@ -250,7 +258,7 @@ with open("metadata.csv", "w") as file:     # Open output file
         ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
          "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass", "Infraclass", "Superorder",
-         "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", "Date Late Modified",
+         "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -258,14 +266,18 @@ gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'A
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
 subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
-            'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes'],
+            'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes', 'Leuronectes'],
             'Cybister': ['Megadytoides', 'Melanectes', 'Neocybister'],
             'Megadytes': ['Bifurcitus', 'Paramegadytes', 'Trifurcitus'],
             'Acilus': ['Homoeolytrus'],
             'Hydaticus': ['Prodaticus'],
             'Clypeodytes': ['Hypoclypeus', 'Paraclypeus'],
             'Clemnius': ['Cyclopius'],
-            'Hygrotus': ['Coelambus', 'Hyphoporus', 'Leptolambus']}
+            'Hygrotus': ['Coelambus', 'Heroceras', 'Herophydrus', 'Hyphoporus', 'Leptolambus'],
+            'Rhantus': ['Anisomera', 'Senilites'],
+            'Aglymbus': ['Rugosus'],
+            'Exocelina': ['Papuadytes'],
+            'Paroster': ['Terradessus']}
 
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
@@ -284,14 +296,15 @@ for gene, records in longest.items():
         row.extend(output["taxonomy"])
         gen_spec = output['spec'].split(' ')
         genus = gen_spec[0]
-        print(genus)
         for k, v in subgenus.items():
-            print(v)
             if genus in v:
                 genus = k
-                print("yes")
+        for k, v in subtribes.items():
+            if genus in v:
+                subtribe = k
             else:
-                print("no")
+                subtribe = ''
+        row.append(subtribe)
         row.append(genus)
         row.append(output["spec"])
         row.append(output["rec date"])
