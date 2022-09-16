@@ -1,4 +1,6 @@
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i txid
+#!/usr/bin/env python3
+
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i
 # python3 get_from_ids.py -e mixedupvoyage@gmail.com -x -l txid2770180,txid2770181,txid2770182
 # Get genbanks from list of GenBank ID numbers, accessions or taxon IDs.
 # Have not added chuck search: only retrieves up to 10,000 records.
@@ -82,10 +84,6 @@ parser.add_argument("-e", "--email", type=str, help="Your email registered with 
 
 args = parser.parse_args()
 
-if args.fasta_id is None:
-    print("Output for fasta IDs not specified. Please choose '-i txid' for taxon ID or '-i gbid' for GenBank Accession number.")
-    exit()
-
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
 Entrez.email = args.email
 
@@ -121,8 +119,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass", "Infraclass", "Superorder",
-         "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -192,7 +189,11 @@ sequences = []
 for rec in record:
     x += 1
     spec = rec.annotations["organism"]
-    taxonomy = rec.annotations["taxonomy"][0:15]
+    taxonomy = rec.annotations["taxonomy"][10:15]
+    taxonomy.extend([""] * (5 - len(taxonomy)))
+    tax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{spec}"
+    if taxonomy[4] == "Cybistrini":
+        taxonomy[3] = "Cybistrinae"
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
@@ -241,9 +242,9 @@ for rec in record:
             seq = feature.extract(rec.seq)
         if stdname in sequencedict:                 # Save sequences for fasta
             if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                sequencedict[stdname][gbid] = [txid, seq]
+                sequencedict[stdname][gbid] = [txid, tax, seq]
         else:
-            sequencedict[stdname] = {gbid: [txid, seq]}
+            sequencedict[stdname] = {gbid: [txid, tax, seq]}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
 
@@ -254,18 +255,16 @@ for rec in record:
             row.append(feats[g])
         else:
             row.append("")
-    taxonomy.extend([""] * (15 - len(taxonomy)))
-    if taxonomy[14] == "Cybistrini":
-        taxonomy[13] = "Cybistrinae"
     row.extend(taxonomy)
     gen_spec = spec.split(' ')
     genus = gen_spec[0]
     for k, v in subgenus.items():
         if genus in v:
             genus = k
-    row2 = [genus, spec, rec.annotations["date"], c_date, country, region, latlon]
+    row2 = [genus, spec, rec.annotations["date"], c_date, country, region, latlon,]
     row2.extend(refs)
     row = row + row2
+    row.append(gbid+tax)
     writer.writerow(row)
 
 
@@ -273,13 +272,15 @@ print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
 for gene, records in sequencedict.items():
+    print(gene)
+    print(records)
     file = open(f"{gene}.fasta", "w")
     for acc, rec in records.items():
         if args.fasta_id:
             f_id = rec[0]
         else:
             f_id = acc
-        file.write(f">{f_id}\n{rec[1]}\n")
+        file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
     print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
 
