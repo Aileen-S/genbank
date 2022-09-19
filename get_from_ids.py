@@ -119,7 +119,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", 'Label', "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -155,16 +155,21 @@ if args.txid:
     # Get taxon IDs from file
     if args.file:
         if args.file:
+            txids = []
             file = open(args.file)
-            txids = file.readlines()
+            lines = file.readlines()
+            for line in lines:
+                txid = line.strip()
+                txids.append(txid)
+
     # Search GenBank for txids and return list of accessions.
     ids = []
     for txid in txids:
-        handle = Entrez.esearch(db="nucleotide", term=f"{txid}[Orgn]", rettype="gb", retmode="text",
+        handle = Entrez.esearch(db="nucleotide", term=f"txid{txid}[Orgn]", rettype="gb", retmode="text",
                                 retmax=10000)  # Get GenBanks
         record = Entrez.read(handle)
         ids = ids + record["IdList"]  # Get list of accessions
-        id_str = ",".join(ids)
+    id_str = ",".join(ids)
 
 else:
     if args.list:
@@ -177,10 +182,7 @@ else:
         for line in lines:
             line.strip()
             ids.append(line)
-            id_str = ",".join(ids)
-
-
-
+        id_str = ",".join(ids)
 
 # Fetch records from GenBank
 handle = Entrez.efetch(db="nucleotide", id=id_str, rettype="gb", retmode="text")  # Get GenBanks
@@ -189,11 +191,12 @@ sequences = []
 for rec in record:
     x += 1
     spec = rec.annotations["organism"]
+    specfasta = spec.replace(" ","_")
     taxonomy = rec.annotations["taxonomy"][10:15]
     taxonomy.extend([""] * (5 - len(taxonomy)))
-    tax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{spec}"
     if taxonomy[4] == "Cybistrini":
         taxonomy[3] = "Cybistrinae"
+    tax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
@@ -261,10 +264,9 @@ for rec in record:
     for k, v in subgenus.items():
         if genus in v:
             genus = k
-    row2 = [genus, spec, rec.annotations["date"], c_date, country, region, latlon,]
+    row2 = [genus, spec, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
     row2.extend(refs)
     row = row + row2
-    row.append(gbid+tax)
     writer.writerow(row)
 
 
@@ -272,8 +274,6 @@ print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
 for gene, records in sequencedict.items():
-    print(gene)
-    print(records)
     file = open(f"{gene}.fasta", "w")
     for acc, rec in records.items():
         if args.fasta_id:
