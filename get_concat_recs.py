@@ -91,6 +91,10 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
+mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CTYB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+nuc = ['AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
+rna = ['12S', '16S', '18S', '28S']
+
 subtribes = {'Deronectina': ['Amurodytes', 'Boreonectes', 'Clarkhydrus', 'Deronectes', 'Deuteronectes', 'Hornectes', 'Iberonectes',
                              'Larsonectes', 'Leconectes', 'Mystonectes', 'Nebrioporus', 'Nectoboreus', 'Nectomimus', 'Nectoporus',
                              'Neonectes', 'Oreodytes', 'Scarodytes', 'Stictotarsus', 'Trichonectes', 'Zaitzevhydrus'],
@@ -179,13 +183,19 @@ for tax in taxids:
 
         for feature in rec.features:
             type = feature.type
-            if type not in ('CDS', 'rRNA', 'mRNA'):
+            if type not in ('CDS', 'rRNA'):
                 continue  # skip the rest of the current iteration of this loop
             name = get_feat_name(feature)                       # Find gene name
             stdname = ""
             for k, v in genes.items():
                 if name in v:
                     stdname = k
+            if stdname == '':
+                continue
+            trans = ''
+            if stdname in nuc or mito:
+                if 'translation' in feature.qualifiers:
+                    trans = feature.qualifiers["translation"][0]
             if stdname == "":
                 unrec_genes.add(name)
                 continue
@@ -203,6 +213,7 @@ for tax in taxids:
                           "type": type,
                           "length": len(seq),
                           "seq": seq,
+                          'trans': trans,
                           "country": country,
                           "region": region,
                           "latlon": latlon,
@@ -318,8 +329,26 @@ for gene, records in longest.items():
 
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
+    x = 0
+    y = 0
+    z = 0
     for rec in records:
         file.write(f">{rec[args.fasta]}\n{rec['seq']}\n")
+        x += 1
+    print(f'{x} records written to {gene}.fasta')
+    if gene in nuc:
+        file1 = open(f"{gene}AA.fasta", "w")
+        for rec in records:
+            file1.write(f">{rec[args.fasta]}\n{rec['trans']}\n")
+            y += 1
+        print(f'{y} records written to {gene}AA.fasta')
+    if gene in mito:
+        file1 = open(f"{gene}AA.fasta", "w")
+        for rec in records:
+            file1.write(f">{rec[args.fasta]}\n{rec['trans']}\n")
+            z += 1
+        print(f'{z} records written to {gene}AA.fasta')
+
 print("CSV and fastas written to file.")
 
 
