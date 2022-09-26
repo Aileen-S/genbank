@@ -126,6 +126,9 @@ with open("metadata.csv", "w") as file:     # Open output file
 gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'ATP6', 'ATP8',
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
+cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
+
+
 subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
             'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes', 'Leuronectes'],
             'Cybister': ['Megadytoides', 'Melanectes', 'Neocybister'],
@@ -231,7 +234,7 @@ for rec in record:
     feats = {}                                      # Gene length dict for metadata
     for feature in rec.features:
         type = feature.type
-        if type not in ('CDS', 'rRNA', 'mRNA'):
+        if type not in ('CDS', 'rRNA'):
             continue  # skip to next feature
         name = get_feat_name(feature)
         stdname = ""
@@ -243,11 +246,15 @@ for rec in record:
             continue
         else:
             seq = feature.extract(rec.seq)
+        trans = ''
+        if stdname in cds:
+            if 'translation' in feature.qualifiers:
+                trans = feature.qualifiers["translation"][0]
         if stdname in sequencedict:                 # Save sequences for fasta
             if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                sequencedict[stdname][gbid] = [txid, tax, seq]
+                sequencedict[stdname][gbid] = [txid, tax, seq, trans]
         else:
-            sequencedict[stdname] = {gbid: [txid, tax, seq]}
+            sequencedict[stdname] = {gbid: [txid, tax, seq, trans]}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
 
@@ -273,6 +280,7 @@ for rec in record:
 print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
+
 for gene, records in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
     for acc, rec in records.items():
@@ -281,7 +289,14 @@ for gene, records in sequencedict.items():
         else:
             f_id = acc
         file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
-    print(f"{len(records)} {gene} records saved to {gene}.fasta")
+    if gene in cds:
+        file = open(f"{gene}AA.fasta", "w")
+        for acc, rec in records.items():
+            if args.fasta_id:
+                f_id = rec[0]
+            else:
+                f_id = acc
+            file.write(f">{f_id}{rec[1]}\n{rec[3]}\n")
+
+    #print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
-
-
