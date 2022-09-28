@@ -59,7 +59,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
-parser.add_argument('-f', '--fasta', type=str, choices=['txid', 'gbid'], help='Choose either taxon id or genbank id as ref in fasta files.')
+parser.add_argument('-i', '--fasta_id', action="store_true", help="Print taxon ID rather than accession in output fastas.")
 #parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
@@ -200,6 +200,8 @@ for tax in taxids:
                 unrec_genes.add(name)
                 continue
             else:
+                if 'codon_start' in feature.qualifiers:
+                    frame = feature.qualifiers["codon_start"]
                 seq = feature.extract(rec.seq)
                 sequences.append(seq)
                 output = {"gene": stdname,
@@ -213,6 +215,7 @@ for tax in taxids:
                           "type": type,
                           "length": len(seq),
                           "seq": seq,
+                          "frame": frame,
                           'trans': trans,
                           "country": country,
                           "region": region,
@@ -326,26 +329,29 @@ for gene, records in longest.items():
         row.extend(output["refs"])
         writer.writerow(row)
 
-
+if args.fasta_id:
+    f_id = 'txid'
+else:
+    f_id = 'gbid'
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
     y = 0
     z = 0
     for rec in records:
-        file.write(f">{rec[args.fasta]}\n{rec['seq']}\n")
+        file.write(f">{rec[f_id]}\n{rec['seq']}\n")
         x += 1
     print(f'{x} records written to {gene}.fasta')
     if gene in nuc:
         file1 = open(f"{gene}AA.fasta", "w")
         for rec in records:
-            file1.write(f">{rec[args.fasta]}\n{rec['trans']}\n")
+            file1.write(f">{rec[f_id]};frame={rec['frame'][0]}\n{rec['trans']}\n")
             y += 1
         print(f'{y} records written to {gene}AA.fasta')
     if gene in mito:
         file1 = open(f"{gene}AA.fasta", "w")
         for rec in records:
-            file1.write(f">{rec[args.fasta]}\n{rec['trans']}\n")
+            file1.write(f">{rec[f_id]};frame={rec['frame'][0]}\n{rec['trans']}\n")
             z += 1
         print(f'{z} records written to {gene}AA.fasta')
 
