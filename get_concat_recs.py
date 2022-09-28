@@ -157,6 +157,14 @@ for tax in taxids:
         if args.taxon not in rec.annotations["taxonomy"]:
             unrec_species.append(rec.name)
             continue
+        spec = rec.annotations["organism"]
+        specfasta = spec.replace(" ", "_")
+        taxonomy = rec.annotations["taxonomy"][10:15]
+        taxonomy.extend([""] * (5 - len(taxonomy)))
+        if taxonomy[4] == "Cybistrini":
+            taxonomy[3] = "Cybistrinae"
+        fastatax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
             if ":" in location:
@@ -211,7 +219,8 @@ for tax in taxids:
                           "spec": rec.annotations["organism"],
                           "rec date": rec.annotations["date"],
                           "c date": c_date,
-                          "taxonomy": rec.annotations["taxonomy"][0:15],
+                          "taxonomy": taxonomy,
+                          "fastatax": fastatax,
                           "type": type,
                           "length": len(seq),
                           "seq": seq,
@@ -271,8 +280,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass", "Infraclass", "Superorder",
-         "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -304,9 +312,7 @@ for gene, records in longest.items():
             else:
                 row.append("")
     # Also include gene count column
-        output["taxonomy"].extend([""] * (15 - len(output["taxonomy"])))
-        if output["taxonomy"][14] == "Cybistrini":
-            output["taxonomy"][13] = "Cybistrinae"
+
         row.extend(output["taxonomy"])
         gen_spec = output['spec'].split(' ')
         genus = gen_spec[0]
@@ -339,19 +345,19 @@ for gene, records in longest.items():
     y = 0
     z = 0
     for rec in records:
-        file.write(f">{rec[f_id]}\n{rec['seq']}\n")
+        file.write(f">{rec[f_id]}_{rec['fastatax']}\n{rec['seq']}\n")
         x += 1
     print(f'{x} records written to {gene}.fasta')
     if gene in nuc:
         file1 = open(f"{gene}AA.fasta", "w")
         for rec in records:
-            file1.write(f">{rec[f_id]};frame={rec['frame'][0]}\n{rec['trans']}\n")
+            file1.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['trans']}\n")
             y += 1
         print(f'{y} records written to {gene}AA.fasta')
     if gene in mito:
         file1 = open(f"{gene}AA.fasta", "w")
         for rec in records:
-            file1.write(f">{rec[f_id]};frame={rec['frame'][0]}\n{rec['trans']}\n")
+            file1.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['trans']}\n")
             z += 1
         print(f'{z} records written to {gene}AA.fasta')
 
