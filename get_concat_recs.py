@@ -281,7 +281,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", 'Fasta ID', "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -301,6 +301,11 @@ subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
             'Aglymbus': ['Rugosus'],
             'Exocelina': ['Papuadytes'],
             'Paroster': ['Terradessus']}
+
+if args.fasta_id:
+    f_id = 'gbid'
+else:
+    f_id = 'txid'
 
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
@@ -328,6 +333,7 @@ for gene, records in longest.items():
         row.append(subtribe)
         row.append(genus)
         row.append(output["spec"])
+        row.append(f"{output[f_id]}_{output['fastatax']}")
         row.append(output["rec date"])
         row.append(output["c date"])
         row.append(output["country"])
@@ -336,10 +342,7 @@ for gene, records in longest.items():
         row.extend(output["refs"])
         writer.writerow(row)
 
-if args.fasta_id:
-    f_id = 'gbid'
-else:
-    f_id = 'txid'
+
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
