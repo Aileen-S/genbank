@@ -162,7 +162,7 @@ for tax in taxids:
         taxonomy.extend([""] * (5 - len(taxonomy)))
         if taxonomy[4] == "Cybistrini":
             taxonomy[3] = "Cybistrinae"
-        fastatax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+        fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
 
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
