@@ -93,6 +93,8 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
 mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CTYB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 nuc = ['AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 rna = ['12S', '16S', '18S', '28S']
+cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
+
 
 subtribes = {'Deronectina': ['Amurodytes', 'Boreonectes', 'Clarkhydrus', 'Deronectes', 'Deuteronectes', 'Hornectes', 'Iberonectes',
                              'Larsonectes', 'Leconectes', 'Mystonectes', 'Nebrioporus', 'Nectoboreus', 'Nectomimus', 'Nectoporus',
@@ -199,18 +201,15 @@ for tax in taxids:
                     stdname = k
             if stdname == '':
                 continue
-            trans = ''
-            if stdname in nuc or mito:
-                if 'translation' in feature.qualifiers:
-                    trans = feature.qualifiers["translation"][0]
             if stdname == "":
                 unrec_genes.add(name)
                 continue
-            else:
+            if stdname in cds:
                 if 'codon_start' in feature.qualifiers:
                     frame = feature.qualifiers["codon_start"]
                 else:
                     frame = ''
+                    print(f"Reading frame missing from record {rec.name}, {stdname}.")
                 seq = feature.extract(rec.seq)
                 sequences.append(seq)
                 output = {"gene": stdname,
@@ -226,7 +225,6 @@ for tax in taxids:
                           "length": len(seq),
                           "seq": seq,
                           "frame": frame,
-                          'trans': trans,
                           "country": country,
                           "region": region,
                           "latlon": latlon,
@@ -288,6 +286,7 @@ with open("metadata.csv", "w") as file:     # Open output file
 gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'ATP6', 'ATP8',
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
+
 subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
             'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes', 'Leuronectes'],
             'Cybister': ['Megadytoides', 'Melanectes', 'Neocybister'],
@@ -347,23 +346,17 @@ for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
     y = 0
-    z = 0
-    for rec in records:
-        file.write(f">{rec[f_id]}_{rec['fastatax']}\n{rec['seq']}\n")
-        x += 1
-    print(f'{x} records written to {gene}.fasta')
-    if gene in nuc:
-        file1 = open(f"{gene}AA.fasta", "w")
+    if gene in cds:
         for rec in records:
-            file1.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['trans']}\n")
+            file.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            x += 1
+        print(f'{x} records written to {gene}.fasta')
+    else:
+        for rec in records:
+            file.write(f">{rec[f_id]}_{rec['fastatax']}\n{rec['seq']}\n")
             y += 1
-        print(f'{y} records written to {gene}AA.fasta')
-    if gene in mito:
-        file1 = open(f"{gene}AA.fasta", "w")
-        for rec in records:
-            file1.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['trans']}\n")
-            z += 1
-        print(f'{z} records written to {gene}AA.fasta')
+        print(f'{x} records written to {gene}.fasta')
+
 
 print("CSV and fastas written to file.")
 

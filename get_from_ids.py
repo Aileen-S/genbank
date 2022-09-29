@@ -247,14 +247,17 @@ for rec in record:
         else:
             seq = feature.extract(rec.seq)
         trans = ''
+        frame = ''
         if stdname in cds:
-            if 'translation' in feature.qualifiers:
-                trans = feature.qualifiers["translation"][0]
+            if 'codon_start' in feature.qualifiers:
+                frame = feature.qualifiers["codon_start"][0]
+            else:
+                print(f"Reading frame missing from record {rec.name}, {stdname}.")
         if stdname in sequencedict:                 # Save sequences for fasta
             if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                sequencedict[stdname][gbid] = [txid, tax, seq, trans]
+                sequencedict[stdname][gbid] = [txid, tax, seq, frame]
         else:
-            sequencedict[stdname] = {gbid: [txid, tax, seq, trans]}
+            sequencedict[stdname] = {gbid: [txid, tax, seq, frame]}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
 
@@ -283,20 +286,21 @@ print(f"Unrecognised Genes {unrecgenes}")
 
 for gene, records in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
-    for acc, rec in records.items():
-        if args.fasta_id:
-            f_id = rec[0]
-        else:
-            f_id = acc
-        file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
     if gene in cds:
-        file = open(f"{gene}AA.fasta", "w")
+        file = open(f"{gene}.fasta", "w")
         for acc, rec in records.items():
             if args.fasta_id:
                 f_id = rec[0]
             else:
                 f_id = acc
-            file.write(f">{f_id}{rec[1]}\n{rec[3]}\n")
+            file.write(f">{f_id}{rec[1]};frame={rec[3]}\n{rec[2]}\n")
+    else:
+        for acc, rec in records.items():
+            if args.fasta_id:
+                f_id = rec[0]
+            else:
+                f_id = acc
+            file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
 
     #print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
