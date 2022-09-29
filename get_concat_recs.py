@@ -210,36 +210,36 @@ for tax in taxids:
                 else:
                     frame = ''
                     print(f"Reading frame missing from record {rec.name}, {stdname}.")
-                seq = feature.extract(rec.seq)
-                sequences.append(seq)
-                output = {"gene": stdname,
-                          "gbid": rec.name,
-                          "txid": tax,
-                          "description": rec.description,
-                          "spec": rec.annotations["organism"],
-                          "rec date": rec.annotations["date"],
-                          "c date": c_date,
-                          "taxonomy": taxonomy,
-                          "fastatax": fastatax,
-                          "type": type,
-                          "length": len(seq),
-                          "seq": seq,
-                          "frame": frame,
-                          "country": country,
-                          "region": region,
-                          "latlon": latlon,
-                          "refs": refs}
-                if tax in species:                              # If taxon ID in dict
-                    if stdname in species[tax]:                 # If gene in dict for that taxon ID
-                        species[tax][stdname].append(output)    # Add gene info list to dict
-                        x += 1
-                    else:
-                        species[tax][stdname] = [output]      # Otherwise add to dict with new key
-                        x += 1
-                else:
-                    species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+            seq = feature.extract(rec.seq)
+            sequences.append(seq)
+            output = {"gene": stdname,
+                      "gbid": rec.name,
+                      "txid": tax,
+                      "description": rec.description,
+                      "spec": rec.annotations["organism"],
+                      "rec date": rec.annotations["date"],
+                      "c date": c_date,
+                      "taxonomy": taxonomy,
+                      "fastatax": fastatax,
+                      "type": type,
+                      "length": len(seq),
+                      "seq": seq,
+                      "frame": frame,
+                      "country": country,
+                      "region": region,
+                      "latlon": latlon,
+                      "refs": refs}
+            if tax in species:                              # If taxon ID in dict
+                if stdname in species[tax]:                 # If gene in dict for that taxon ID
+                    species[tax][stdname].append(output)    # Add gene info list to dict
                     x += 1
-                #break
+                else:
+                    species[tax][stdname] = [output]      # Otherwise add to dict with new key
+                    x += 1
+            else:
+                species[tax] = {stdname: [output]}      # Otherwise add to dict with new key
+                x += 1
+            #break
 
 
 print(f"\n{x} gene records saved to species dict")
