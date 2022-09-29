@@ -60,7 +60,6 @@ def search_nuc(term, summaries=False, chunk=10000):
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-i', '--fasta_id', action="store_true", help="Print GenBank accession rather than taxon ID in output fastas.")
-#parser.add_argument("-g", "--gene", type=str, help="Gene(s) of interest. Format: gene1,gene2,gene3")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 
@@ -210,6 +209,8 @@ for tax in taxids:
             else:
                 if 'codon_start' in feature.qualifiers:
                     frame = feature.qualifiers["codon_start"]
+                else:
+                    frame = ''
                 seq = feature.extract(rec.seq)
                 sequences.append(seq)
                 output = {"gene": stdname,
@@ -336,9 +337,9 @@ for gene, records in longest.items():
         writer.writerow(row)
 
 if args.fasta_id:
-    f_id = 'txid'
-else:
     f_id = 'gbid'
+else:
+    f_id = 'txid'
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
