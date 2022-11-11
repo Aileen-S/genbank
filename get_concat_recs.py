@@ -210,6 +210,8 @@ for tax in taxids:
                 else:
                     frame = ''
                     print(f"Reading frame missing from record {rec.name}, {stdname}.")
+            else:
+                frame = ''
             seq = feature.extract(rec.seq)
             sequences.append(seq)
             output = {"gene": stdname,
