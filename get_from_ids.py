@@ -249,12 +249,13 @@ for rec in record:
         for k, v in genes.items():
             if name in v:
                 stdname = k
-                y += 1
         if stdname == "":
             unrecgenes.add(name)
             continue
         else:
             seq = feature.extract(rec.seq)
+            y += 1
+
         #if seq in sequences:
             #continue
         trans = ''
@@ -267,6 +268,7 @@ for rec in record:
         if stdname in sequencedict:                 # Save sequences for fasta
             if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
                 sequencedict[stdname][gbid] = [txid, tax, seq, frame]
+
         else:
             sequencedict[stdname] = {gbid: [txid, tax, seq, frame]}
         if stdname not in feats.keys():             # Save lengths for metadata
@@ -281,8 +283,10 @@ for rec in record:
     row2 = [genus_spec[0], species, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
     row2.extend(refs)
     row = row + row2
-    if y > 0:
-        writer.writerow(row)
+    print(rec.name)
+    print(y)
+    #if y > 0:
+    writer.writerow(row)
 
 
 print(f"{str(x)} records found")
