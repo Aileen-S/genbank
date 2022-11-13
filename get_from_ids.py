@@ -255,8 +255,8 @@ for rec in record:
             continue
         else:
             seq = feature.extract(rec.seq)
-        if seq in sequences:
-            continue
+        #if seq in sequences:
+            #continue
         trans = ''
         frame = ''
         if stdname in cds:
