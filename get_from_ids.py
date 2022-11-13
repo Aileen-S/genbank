@@ -80,6 +80,7 @@ parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
 parser.add_argument('-i', '--fasta_id', action="store_true", help="Print taxon ID rather than accession in output fastas.")
+parser.add_argument('-b', '--both', action="store_true", help="Print taxon ID and accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 args = parser.parse_args()
@@ -193,13 +194,20 @@ record = SeqIO.parse(handle, "gb")
 sequences = []
 for rec in record:
     x += 1
-    spec = rec.annotations["organism"]
-    specfasta = spec.replace(" ","_")
+    y = 0
+    species = rec.annotations["organism"]
+    genus_spec = species.split(' ', 1)   #.split('mango', 1)[1]
+    for k, v in subgenus.items():
+        if genus_spec[0] in v:
+            genus_spec[0] = k
+    genus_spec[1] = genus_spec[1].replace(" ", "_")
+
+
     taxonomy = rec.annotations["taxonomy"][10:15]
     taxonomy.extend([""] * (5 - len(taxonomy)))
     if taxonomy[4] == "Cybistrini":
         taxonomy[3] = "Cybistrinae"
-    tax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+    tax = f"_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{genus_spec[0]}_{genus_spec[1]}"
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
@@ -241,11 +249,14 @@ for rec in record:
         for k, v in genes.items():
             if name in v:
                 stdname = k
+                y += 1
         if stdname == "":
             unrecgenes.add(name)
             continue
         else:
             seq = feature.extract(rec.seq)
+        if seq in sequences:
+            continue
         trans = ''
         frame = ''
         if stdname in cds:
@@ -260,8 +271,6 @@ for rec in record:
             sequencedict[stdname] = {gbid: [txid, tax, seq, frame]}
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
-
-
     # Continue row of metadata csv
     for g in gen:
         if g in feats:
@@ -269,15 +278,11 @@ for rec in record:
         else:
             row.append("")
     row.extend(taxonomy)
-    gen_spec = spec.split(' ')
-    genus = gen_spec[0]
-    for k, v in subgenus.items():
-        if genus in v:
-            genus = k
-    row2 = [genus, spec, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
+    row2 = [genus_spec[0], species, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
     row2.extend(refs)
     row = row + row2
-    writer.writerow(row)
+    if y > 0:
+        writer.writerow(row)
 
 
 print(f"{str(x)} records found")
@@ -286,20 +291,16 @@ print(f"Unrecognised Genes {unrecgenes}")
 
 for gene, records in sequencedict.items():
     file = open(f"{gene}.fasta", "w")
-    if gene in cds:
-        file = open(f"{gene}.fasta", "w")
-        for acc, rec in records.items():
-            if args.fasta_id:
-                f_id = rec[0]
-            else:
-                f_id = acc
+    for acc, rec in records.items():
+        if args.fasta_id:
+            f_id = rec[0]
+        elif args.both:
+            f_id = f'{rec[0]}_{acc}'
+        else:
+            f_id = acc
+        if gene in cds:
             file.write(f">{f_id}{rec[1]};frame={rec[3]}\n{rec[2]}\n")
-    else:
-        for acc, rec in records.items():
-            if args.fasta_id:
-                f_id = rec[0]
-            else:
-                f_id = acc
+        else:
             file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
 
     #print(f"{len(records)} {gene} records saved to {gene}.fasta")
