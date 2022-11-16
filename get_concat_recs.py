@@ -59,7 +59,8 @@ def search_nuc(term, summaries=False, chunk=10000):
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
-parser.add_argument('-i', '--fasta_id', action="store_true", help="Print GenBank accession rather than taxon ID in output fastas.")
+parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
+parser.add_argument('-b', '--both', action="store_true", help="Print taxon ID and accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 
@@ -279,9 +280,9 @@ for tax, stdname in species.items():
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
+        ["Accession", "Taxon ID", "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Species", 'Fasta ID', "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -303,16 +304,12 @@ subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
             'Exocelina': ['Papuadytes'],
             'Paroster': ['Terradessus']}
 
-if args.fasta_id:
-    f_id = 'gbid'
-else:
-    f_id = 'txid'
 
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for gene, records in longest.items():
     for output in records:
-        row = [output["gbid"], output["txid"], output["description"]]
+        row = [output["gbid"], output["txid"], output["spec"]]
         for g in gen:
             if g == output['gene']:
                 row.append(output['length'])
@@ -333,8 +330,7 @@ for gene, records in longest.items():
                 subtribe = ''
         row.append(subtribe)
         row.append(genus)
-        row.append(output["spec"])
-        row.append(f"{output[f_id]}_{output['fastatax']}")
+        row.append(output["description"])
         row.append(output["rec date"])
         row.append(output["c date"])
         row.append(output["country"])
@@ -344,23 +340,30 @@ for gene, records in longest.items():
         writer.writerow(row)
 
 
+
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
-    y = 0
-    if gene in cds:
-        for rec in records:
-            file.write(f">{rec[f_id]}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+    for rec in records:
+        if args.fasta_id:
+            if args.fasta_id == 'txid':
+                f_id = rec['txid']
+            if args.fasta_id == 'both':
+                f_id = f"{rec['txid']}_{rec['gbid']}"
+            else:
+                f_id = rec['gbid']
+        else:
+            f_id = rec['gbid']
+        if gene in cds:
+            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
             x += 1
-        print(f'{x} records written to {gene}.fasta')
-    else:
-        for rec in records:
-            file.write(f">{rec[f_id]}_{rec['fastatax']}\n{rec['seq']}\n")
-            y += 1
-        print(f'{x} records written to {gene}.fasta')
+        else:
+            file.write(f">{f_id}_{rec['fastatax']}\n{rec['seq']}\n")
+            x += 1
+    print(f'{x} records written to {gene}.fasta')
 
 
-print("CSV and fastas written to file.")
+print("Metadata saved to metadata.csv")
 
 
 

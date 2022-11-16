@@ -79,8 +79,7 @@ parser = argparse.ArgumentParser(description="Fetch metadata and fastas from spe
 parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
-parser.add_argument('-i', '--fasta_id', action="store_true", help="Print taxon ID rather than accession in output fastas.")
-parser.add_argument('-b', '--both', action="store_true", help="Print taxon ID and accession in output fastas.")
+parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 args = parser.parse_args()
@@ -118,9 +117,9 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Description", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
+        ["Accession", "Taxon ID", "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", 'Label', "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description",  'Label', "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -201,8 +200,6 @@ for rec in record:
         if genus_spec[0] in v:
             genus_spec[0] = k
     genus_spec[1] = genus_spec[1].replace(" ", "_")
-
-
     taxonomy = rec.annotations["taxonomy"][10:15]
     taxonomy.extend([""] * (5 - len(taxonomy)))
     if taxonomy[4] == "Cybistrini":
@@ -236,7 +233,7 @@ for rec in record:
         refs.append(ref.authors)
         refs.append(ref.title)
         refs.append(ref.journal)
-    row = [gbid, txid, rec.description]          # Start row of metadata for CSV
+    row = [gbid, txid, species]          # Start row of metadata for CSV
 
     # Get sequences for fastas and csv
     feats = {}                                      # Gene length dict for metadata
@@ -255,7 +252,6 @@ for rec in record:
         else:
             seq = feature.extract(rec.seq)
             y += 1
-
         #if seq in sequences:
             #continue
         trans = ''
@@ -271,6 +267,7 @@ for rec in record:
 
         else:
             sequencedict[stdname] = {gbid: [txid, tax, seq, frame]}
+
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
     # Continue row of metadata csv
@@ -280,13 +277,11 @@ for rec in record:
         else:
             row.append("")
     row.extend(taxonomy)
-    row2 = [genus_spec[0], species, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
+    row2 = [genus_spec[0], rec.description, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
     row2.extend(refs)
     row = row + row2
-    print(rec.name)
-    print(y)
-    #if y > 0:
-    writer.writerow(row)
+    if y > 0:
+        writer.writerow(row)
 
 
 print(f"{str(x)} records found")
@@ -294,18 +289,22 @@ print(f"Unrecognised Genes {unrecgenes}")
 
 
 for gene, records in sequencedict.items():
+    x = 0
     file = open(f"{gene}.fasta", "w")
     for acc, rec in records.items():
+        f_id = acc
         if args.fasta_id:
-            f_id = rec[0]
-        elif args.both:
-            f_id = f'{rec[0]}_{acc}'
-        else:
-            f_id = acc
+            if args.fasta_id == 'txid':
+                f_id = rec[0]
+            if args.fasta_id == 'both':
+                f_id = f"{rec[0]}_{acc}"
         if gene in cds:
             file.write(f">{f_id}{rec[1]};frame={rec[3]}\n{rec[2]}\n")
+            x += 1
         else:
             file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
+            x += 1
+    print(f'{x} record(s) written to {gene}.fasta')
 
     #print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
