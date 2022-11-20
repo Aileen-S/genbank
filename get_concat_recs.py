@@ -1,6 +1,8 @@
 
 #python3 get_concat_recs.py -e mixedupvoyage@gmail.com -t Megadytes
 
+#python3 get_concat_recs.py -e mixedupvoyage@gmail.com -f COX1barcode_only.fasta.out -i both
+
 # Make dict of subgenus names: new colum for genus, renamed from subgenus dict if necessary.
 
 import argparse
@@ -59,6 +61,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
+parser.add_argument('-f', '--file', type=str, help="Input file with txid list")
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-b', '--both', action="store_true", help="Print taxon ID and accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
@@ -110,35 +113,42 @@ unrec_genes = set()
 unrec_species = []
 Entrez.email = args.email
 
-# Generate search term to get all sequences in the search taxonomy
-# - if -n option not used, then include "mitochondrial" in search term.
-basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
+if args.file:
+    taxids = []
+    file = open(args.file)
+    lines = file.readlines()
+    for line in lines:
+        taxid = line.strip()
+        taxids.append(taxid)
 
-# Retrieve all taxids that represent tips of the NCBI Taxonomy tree
-# Make the search generator
-searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
+    # Generate search term to get all sequences in the search taxonomy
+    # - if -n option not used, then include "mitochondrial" in search term.
+if args.taxon:
+    basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
 
-taxids = set()
-i = 0
-for gbids, summaries in searchgen:
-    # gbids, summaries = next(searchgen)
-    i += 1
-    taxa = set(int(s['TaxId']) for s in summaries)
-    taxids.update(taxa)
-    print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
+    # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
+    # Make the search generator
+    searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
 
-# Some of these will be subspecies.
-# You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
-# Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
+    taxids = set()
+    i = 0
+    for gbids, summaries in searchgen:
+        # gbids, summaries = next(searchgen)
+        i += 1
+        taxa = set(int(s['TaxId']) for s in summaries)
+        taxids.update(taxa)
+        print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
 
+    # Some of these will be subspecies.
+    # You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
+    # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
+    print(f"{len(taxids)} unique taxon IDs saved")
+    print("Searching GenBank")
+    print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
+          f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
-print(f"{len(taxids)} unique taxon IDs saved")
-print("Searching GenBank")
-print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
-      f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
-
-# Set accepted genes and minimum sequence lengths
-#min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
+    # Set accepted genes and minimum sequence lengths
+    #min = {"ATP6": 500, "ATP8": 100, "COX1": 500, "COX2": 500, "COX3": 500, "CYTB": 500, "ND1": 500, "ND2": 500, "ND3": 300, "ND4": 500, "ND4L": 200, "ND5": 500, "ND6": 400}
 
 x = 0  # Count taxids
 y = 0  # Count records saved
