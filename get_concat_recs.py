@@ -172,11 +172,9 @@ species = {}
 sequences = []
 x = 0  # Count taxids
 accstr = ",".join(accs)                                           # Join into string for efetch
-print(accstr)
 handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
 record = SeqIO.parse(handle, "gb")
 for rec in record:
-    print(rec)
     if args.taxon:
         if args.taxon not in rec.annotations["taxonomy"]:
             unrec_species.append(rec.name)
