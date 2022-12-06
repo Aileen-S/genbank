@@ -21,7 +21,7 @@ mods = {'JC': ['JC69'],
           'TIM2': ['TIMe'],
           'TIM3uf': ['TIM3'],
           'TIM3': ['TIMe'],
-          'TVMuf': ['TVM'],
+          'TVMef': ['TVMe'],
           'TVM': ['TVMe'],}
 
 file = open(args.input)
@@ -31,7 +31,7 @@ models = {}
 
 x = 0
 y = 0
-output = open(f'{args.input}_RAxML.txt', 'w')
+output = open(f'{args.input}.raxml', 'w')
 for line in lines:
     line = line.strip(';\n')
     if 'charset' in line:
