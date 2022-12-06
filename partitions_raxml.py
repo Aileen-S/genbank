@@ -43,17 +43,14 @@ for line in lines:
     if ': ' in line:
         x += 1
         split = line.split(': ')
-        model = split[0].strip('    ')
+        model = split[0].strip('    ').split('+', 1)
         for key, value in mods.items():
             for v in value:
-                if v in model:
-                    model = model.replace(v, key)
+                if v == model[0]:
+                    model[0] = model[0].replace(v, key)
+        model = '+'.join(model)
         models[x].append(model)
-
-print(models)
 
 for v in models.values():
     output.write(f'{v[2]}, {v[0]}={v[1]}\n')
-    #start = split[0].split('/')
-    #start[0] = 'DNA'
-    #output.write(f'{start[0]}, {start[1]} = {split[1]}\n')
+
