@@ -6,6 +6,24 @@ parser.add_argument("-i", "--input", type=str, help="in file")
 
 args = parser.parse_args()
 
+mods = {'JC': ['JC69'],
+          'K80': ['K2P'],
+          'HKY': ['HKY85'],
+          'TrN': ['TN', 'TN93'],
+          'TrNef': ['TNe'],
+          'TPM1': ['K81', 'K3P'],
+          'TPM1uf': ['K81u'],
+          'TPM2uf': ['TPM2u'],
+          'TPM3uf': ['TPM3u'],
+          'TIM1uf': ['TIM'],
+          'TIM1': ['TIMe'],
+          'TIM2uf': ['TIM2'],
+          'TIM2': ['TIMe'],
+          'TIM3uf': ['TIM3'],
+          'TIM3': ['TIMe'],
+          'TVMuf': ['TVM'],
+          'TVM': ['TVMe'],}
+
 file = open(args.input)
 lines = file.readlines()
 
@@ -15,17 +33,24 @@ x = 0
 y = 0
 output = open(f'{args.input}_RAxML.txt', 'w')
 for line in lines:
-    line = line.strip()
+    line = line.strip(';\n')
     if 'charset' in line:
         y += 1
         split = line.split(' = ')
-        name = split[0].replace('charset ', '')
-        location = split[1].replace('  ', ', ')
+        name = split[0].replace('  charset ', '')
+        location = split[1].replace('  ', ',')
         models[y] = [name, location]
     if ': ' in line:
         x += 1
         split = line.split(': ')
-        models[x].append(split[0])
+        model = split[0].strip('    ')
+        for key, value in mods.items():
+            for v in value:
+                if v in model:
+                    model = model.replace(v, key)
+        models[x].append(model)
+
+print(models)
 
 for v in models.values():
     output.write(f'{v[2]}, {v[0]}={v[1]}\n')
