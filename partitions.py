@@ -21,7 +21,7 @@ rrna = ['12S', '16S', '18S', '28S']
 if args.sequence_type == 'aa':
     outputaa = open(f'partitions_aa.txt', 'w')
     if args.output == 'nexus':
-        outputaa.write('\#nexus\n'
+        outputaa.write('#nexus\n'
                        'begin sets;\n')
     for line in lines:
         line = line.strip()
@@ -45,7 +45,7 @@ if args.sequence_type == 'aa':
 if args.sequence_type == 'nt':
     outputnt = open(f'partitions_gene.txt', 'w')
     if args.output == 'nexus':
-        outputnt.write('\#nexus\n'
+        outputnt.write('#nexus\n'
                        'begin sets;\n')
     for line in lines:
         line = line.strip()
@@ -63,9 +63,9 @@ if args.sequence_type == 'nt':
     output123 = open(f'partitions_codon123.txt', 'w')
     output12 = open(f'partitions_codon12.txt', 'w')
     if args.output == 'nexus':
-        output123.write('\#nexus\n'
+        output123.write('#nexus\n'
                        'begin sets;\n')
-        output12.write('\#nexus\n'
+        output12.write('#nexus\n'
                        'begin sets;\n')
     for line in lines:
         line = line.strip()
