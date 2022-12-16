@@ -34,7 +34,7 @@ if args.sequence_type == 'aa':
         if args.output == 'raxml':
             outputaa.write(f'{start[0]}, {start[1]}={split[1]}\n')
         if args.output == 'nexus':
-            outputaa.write(f'  charset {start[1]}={split[1]}\n')
+            outputaa.write(f'  charset {start[1]}={split[1]};\n')
 
     if args.output == 'nexus':
         outputaa.write('end;')
