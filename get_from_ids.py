@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -x -l txid2770180,txid2770181,txid2770182
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i both
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -l txid2770180,txid2770181,txid2770182 -x
+# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -m
+
 # Get genbanks from list of GenBank ID numbers, accessions or taxon IDs.
 # Have not added chuck search: only retrieves up to 10,000 records.
 
@@ -81,6 +83,7 @@ parser.add_argument("-f", "--file", type=str, help="Text file containing list of
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
+parser.add_argument("-m", "--metadata", action='store_true', help="Get metadata only, no fastas")
 
 args = parser.parse_args()
 
@@ -90,8 +93,8 @@ Entrez.email = args.email
 # Gene name variants dict
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
          "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
+         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
-         "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1'],
          "COX2": ['CYTOCHROME C OXIDASE SUBUNIT 2', 'CYTOCHROME OXIDASE SUBUNIT II', 'CYTOCHROME C OXIDASE SUBUNIT II', 'COXII', 'CO2', 'COII', 'CYTOCHROME COXIDASE SUBUNIT II', 'CYTOCHROME OXIDASE SUBUNIT 2', 'CYTOCHROME OXYDASE SUBUNIT 2', 'COX2'],
          "COX3": ['CYTOCHROME C OXIDASE SUBUNIT 3', 'CYTOCHROME OXIDASE SUBUNIT III', 'CYTOCHROME C OXIDASE SUBUNIT III', 'COXII', 'CO3', 'COIII', 'CYTOCHROME COXIDASE SUBUNIT III', 'CYTOCHROME OXIDASE SUBUNIT 3', 'CYTOCHROME OXYDASE SUBUNIT 3', 'COX3'],
@@ -103,27 +106,27 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
          "ND4L": ['NAD4L', 'NSD4L', 'NADH4L', 'NADH DEHYDROGENASE SUBUNIT IVL', 'NADH DEHYDROGENASE SUBUNIT 4L', 'NADH DESHYDROGENASE SUBUNIT 4L', 'NAD4L-0', 'ND4L'],
          "ND5": ['NAD5', 'NSD5', 'NADH5', 'NADH DEHYDROGENASE SUBUNIT V', 'NADH DEHYDROGENASE SUBUNIT 5', 'NADH DESHYDROGENASE SUBUNIT 5', 'NAD5-0', 'ND5'],
          "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6'],
-         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
-         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA", 'LARGE SUBUNIT RIBOSOMAL RNA'],
-         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
-         "CAD": ["CAD", "CAD FRAGMENT 1", "CARBAMOYLPHOSPHATE SYNTHETASE"],
-         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
          "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
-         "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
+#"ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
+#"RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
+#"28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA", 'LARGE SUBUNIT RIBOSOMAL RNA'],
+#"AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
+#"CAD": ["CAD", "CAD FRAGMENT 1", "CARBAMOYLPHOSPHATE SYNTHETASE"],
+#"EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
 
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
-         '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+        ["Accession", "Taxon ID", "Species", '12S', "16S", "18S", "H3", 'Wg',
+         'ATP6', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
          "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description",  'Label', "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'ATP6', 'ATP8',
+gen = ['12S', '16S', '18S', 'H3', 'Wg', 'ATP6',
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
 cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
@@ -270,7 +273,7 @@ for rec in record:
 
         if stdname not in feats.keys():             # Save lengths for metadata
             feats[stdname] = len(seq)
-    # Continue row of metadata csv
+# Continue row of metadata csv
     for g in gen:
         if g in feats:
             row.append(feats[g])
@@ -287,24 +290,24 @@ for rec in record:
 print(f"{str(x)} records found")
 print(f"Unrecognised Genes {unrecgenes}")
 
-
-for gene, records in sequencedict.items():
-    x = 0
-    file = open(f"{gene}.fasta", "w")
-    for acc, rec in records.items():
-        f_id = acc
-        if args.fasta_id:
-            if args.fasta_id == 'txid':
-                f_id = rec[0]
-            if args.fasta_id == 'both':
-                f_id = f"{rec[0]}_{acc}"
-        if gene in cds:
-            file.write(f">{f_id}{rec[1]};frame={rec[3]}\n{rec[2]}\n")
-            x += 1
-        else:
-            file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
-            x += 1
-    print(f'{x} record(s) written to {gene}.fasta')
+if not args.metadata:
+    for gene, records in sequencedict.items():
+        x = 0
+        file = open(f"{gene}.fasta", "w")
+        for acc, rec in records.items():
+            f_id = acc
+            if args.fasta_id:
+                if args.fasta_id == 'txid':
+                    f_id = rec[0]
+                if args.fasta_id == 'both':
+                    f_id = f"{rec[0]}_{acc}"
+            if gene in cds:
+                file.write(f">{f_id}{rec[1]};frame={rec[3]}\n{rec[2]}\n")
+                x += 1
+            else:
+                file.write(f">{f_id}{rec[1]}\n{rec[2]}\n")
+                x += 1
+        print(f'{x} record(s) written to {gene}.fasta')
 
     #print(f"{len(records)} {gene} records saved to {gene}.fasta")
 print("Metadata saved to metadata.csv")
