@@ -1,3 +1,5 @@
+#python3 blast.py -i test.txt -o blast.txt
+
 from Bio.Blast import NCBIWWW
 from Bio.Blast import NCBIXML
 import argparse
@@ -29,7 +31,7 @@ for blast_record in blast_records:
     output.write(f'\nBLAST SEARCH {x}: {blast_record.query}\n\n')
     for alignment in blast_record.alignments:
         for hsp in alignment.hsps:
-            if y == 5:
+            if y == 10:
                 break
             if hsp.expect < E_VALUE_THRESH:
                 y +=1
@@ -42,7 +44,7 @@ for blast_record in blast_records:
                 output.write(hsp.query[0:99] + "...\n")
                 output.write(hsp.match[0:99] + "...\n")
                 output.write(hsp.sbjct[0:99] + "...\n")
-        if y == 5:
+        if y == 10:
             break
 
     if y == 0:
