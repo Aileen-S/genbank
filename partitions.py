@@ -91,8 +91,8 @@ if args.sequence_type == 'nt':
                 #output12.write(f'{start[0]}, {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3\n')
             if args.output == 'nexus':
                 output123.write(f'  charset {part[0]}.1 ={split[1]};\n')
-                output123.write(f'  charset {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3;\n')
-                output123.write(f'  charset {part[0]}.3 = {int(pos[0])+2}-{pos[1]}\\3;\n')
+                output123.write(f'  charset {part[0]}.2 ={split[1]};\n')
+                output123.write(f'  charset {part[0]}.3 ={split[1]};\n')
                 #output12.write(f'  charset {part[0]}.1 ={split[1]};\n')
                 #output12.write(f'  charset {part[0]}.2 ={split[1]};\n')
     if args.output == 'nexus':
