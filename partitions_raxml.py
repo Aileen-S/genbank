@@ -34,13 +34,14 @@ y = 0
 output = open(f'{args.input}.raxml', 'w')
 for line in lines:
     line = line.strip(';\n')
-    if 'charset' in line:
+    if 'charset' in line:       # Lines with partition location
         y += 1
         split = line.split(' = ')
         name = split[0].replace('  charset ', '')
         location = split[1].replace('  ', ',')
+        location = location.replace('\\', '/')
         models[y] = [name, location]
-    if ': ' in line:
+    if ': ' in line:            # Lines with partition models
         x += 1
         split = line.split(': ')
         model = split[0].strip('    ').split('+', 1)

@@ -1,4 +1,4 @@
-# python3 partitions.py -i test.txt -t aa -o nexus
+# python3 partitions.py -i test.txt -t nt -o nexus
 
 import argparse
 
@@ -61,12 +61,12 @@ if args.sequence_type == 'nt':
     # NT Codon Partitions
 
     output123 = open(f'partitions_codon123.txt', 'w')
-    output12 = open(f'partitions_codon12.txt', 'w')
+    #output12 = open(f'partitions_codon12.txt', 'w')
     if args.output == 'nexus':
         output123.write('#nexus\n'
                        'begin sets;\n')
-        output12.write('#nexus\n'
-                       'begin sets;\n')
+        #output12.write('#nexus\n'
+                       #'begin sets;\n')
     for line in lines:
         line = line.strip()
         split = line.split('=')
@@ -75,29 +75,29 @@ if args.sequence_type == 'nt':
         if any(r in start[1] for r in rrna):
             if args.output == 'raxml':
                 output123.write(f'{start[0]}, {start[1]}={split[1]}\n')
-                output12.write(f'{start[0]}, {start[1]}={split[1]}\n')
+                #output12.write(f'{start[0]}, {start[1]}={split[1]}\n')
             if args.output == 'nexus':
                 output123.write(f'  charset {start[1]}={split[1]};\n')
-                output12.write(f'  charset {start[1]}={split[1]};\n')
+                #output12.write(f'  charset {start[1]}={split[1]};\n')
 
         else:
             part = start[1].split('.')
             pos = split[1].split('-')
             if args.output == 'raxml':
                 output123.write(f'{start[0]}, {part[0]}.1 ={pos[0]}-{pos[1]}\\3\n')
-                output12.write(f'{start[0]}, {part[0]}.1 ={pos[0]}-{pos[1]}\\3\n')
                 output123.write(f'{start[0]}, {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3\n')
-                output12.write(f'{start[0]}, {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3\n')
                 output123.write(f'{start[0]}, {part[0]}.3 = {int(pos[0])+2}-{pos[1]}\\3\n')
+                #output12.write(f'{start[0]}, {part[0]}.1 ={pos[0]}-{pos[1]}\\3\n')
+                #output12.write(f'{start[0]}, {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3\n')
             if args.output == 'nexus':
                 output123.write(f'  charset {part[0]}.1 ={split[1]};\n')
-                output123.write(f'  charset {part[0]}.2 ={split[1]};\n')
-                output123.write(f'  charset {part[0]}.3 ={split[1]};\n')
-                output12.write(f'  charset {part[0]}.1 ={split[1]};\n')
-                output12.write(f'  charset {part[0]}.2 ={split[1]};\n')
+                output123.write(f'  charset {part[0]}.2 = {int(pos[0])+1}-{pos[1]}\\3;\n')
+                output123.write(f'  charset {part[0]}.3 = {int(pos[0])+2}-{pos[1]}\\3;\n')
+                #output12.write(f'  charset {part[0]}.1 ={split[1]};\n')
+                #output12.write(f'  charset {part[0]}.2 ={split[1]};\n')
     if args.output == 'nexus':
         outputnt.write('end;')
-        output12.write('end;')
+        #output12.write('end;')
         output123.write('end;')
 
 
