@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -i both
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -l txid2770180,txid2770181,txid2770182 -x
-# python3 get_from_ids.py -e mixedupvoyage@gmail.com -f test.txt -m
 
-# Get genbanks from list of GenBank ID numbers, accessions or taxon IDs.
-# Have not added chuck search: only retrieves up to 10,000 records.
-
+# python3 ptp_get_metadata.py -e mixedupvoyage@gmail.com -f test.txt
 
 import argparse
 import csv
@@ -60,28 +55,11 @@ def search_nuc(term, summaries=False, chunk=10000):
             yield gbids, sumrec
 
 
-# This reclasses the argparse.HelpFormatter object to have newlines in the help text for paragraphs
-class MultilineFormatter(argparse.HelpFormatter):
-    def _fill_text(self, text, width, indent):
-        text = self._whitespace_matcher.sub(' ', text).strip()
-        paragraphs = text.split('|n ')
-        multiline_text = ''
-        for paragraph in paragraphs:
-            formatted_paragraph = _textwrap.fill(paragraph, width, initial_indent=indent,
-                                                 subsequent_indent=indent
-                                                 ) + '\n\n'
-            multiline_text = multiline_text + formatted_paragraph
-        return multiline_text
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Fetch metadata and fastas from specified GenBank accession/ID numbers. "
-                                             "Input refs either in command with -r flag, or listed in text file using "
-                                             "-f flag.", formatter_class=MultilineFormatter)
-parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
+parser = argparse.ArgumentParser(description="Combine metadata from multiple genes")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
-parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
-parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 args = parser.parse_args()
@@ -119,11 +97,9 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Species", '12S', "16S", "18S", "H3", 'Wg',
+        ["Accessions", "Taxon ID", "Species", '12S', "16S", "18S", "H3", 'Wg',
          'ATP6', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description",  'Label', "Date Late Modified",
-         "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
-         "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus'])
 
 gen = ['12S', '16S', '18S', 'H3', 'Wg', 'ATP6',
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
@@ -153,44 +129,16 @@ x = 0  # Count records added to species dict.
 
 # Get IDs from argparse input
 
-if args.txid:
-    # Get taxon IDs from command line input list format txid1,txid2,txid3
-    if args.list:
-        txids = args.list.split(",")
-    # Get taxon IDs from file
-    if args.file:
-        if args.file:
-            txids = []
-            file = open(args.file)
-            lines = file.readlines()
-            for line in lines:
-                txid = line.strip()
-                txids.append(txid)
+ids = []
+file = open(args.file)
+lines = file.readlines()
+for line in lines:
+    line.strip()
+    ids.append(line)
+id_str = ",".join(ids)
 
-    # Search GenBank for txids and return list of accessions.
-    ids = []
-    for txid in txids:
-        handle = Entrez.esearch(db="nucleotide", term=f"txid{txid}[Orgn]", rettype="gb", retmode="text",
-                                retmax=10000)  # Get GenBanks
-        record = Entrez.read(handle)
-        ids = ids + record["IdList"]  # Get list of accessions
-    id_str = ",".join(ids)
 
-else:
-    if args.list:
-        id_str = args.list
-
-    if args.file:
-        ids = []
-        file = open(args.file)
-        lines = file.readlines()
-        for line in lines:
-            line.strip()
-            ids.append(line)
-        id_str = ",".join(ids)
-
-if args.metadata:
-    txids = []
+txids = {}
 # Fetch records from GenBank
 handle = Entrez.efetch(db="nucleotide", id=id_str, rettype="gb", retmode="text")  # Get GenBanks
 record = SeqIO.parse(handle, "gb")
@@ -213,32 +161,15 @@ for rec in record:
     for ref in db_xref:
         if "taxon" in ref:                                  # Get NCBI taxon, rather than BOLD cross ref
             txid = "".join(filter(str.isdigit, ref))         # Extract numbers from NCBI taxon value
-    txids.append(txid)
     gbid = rec.name
-    if "country" in rec.features[0].qualifiers:
-        location = rec.features[0].qualifiers["country"][0]
-        if ":" in location:
-            country, region = location.split(":")
-        else:
-            country = location
-            region = ""
+    if txid in txids.keys():
+        txids[txid]['gbids'].append(gbid)
     else:
-        country = ""
-        region = ""
-    if "lat_lon" in rec.features[0].qualifiers:
-        latlon = rec.features[0].qualifiers["lat_lon"][0]
-    else:
-        latlon = ""
-    if "collection_date" in rec.features[0].qualifiers:
-        c_date = rec.features[0].qualifiers["collection_date"][0]
-    else:
-        c_date = ""
-    refs = []
-    for ref in rec.annotations["references"]:
-        refs.append(ref.authors)
-        refs.append(ref.title)
-        refs.append(ref.journal)
-    row = [gbid, txid, species]          # Start row of metadata for CSV
+        txids[txid] = {'gbids': [gbid],
+                       'species': species,
+                       'taxonomy': taxonomy,
+                       'gs': genus_spec}
+
 
     # Get sequences for fastas and csv
     feats = {}                                      # Gene length dict for metadata
@@ -257,38 +188,20 @@ for rec in record:
         else:
             seq = feature.extract(rec.seq)
             y += 1
-        #if seq in sequences:
-            #continue
-        if args.metadata:
-            feats[stdname] = len(seq)
-        else:
-            frame = ''
-            if stdname in cds:
-                if 'codon_start' in feature.qualifiers:
-                    frame = feature.qualifiers["codon_start"][0]
-                else:
-                    print(f"Reading frame missing from record {rec.name}, {stdname}.")
-            if stdname in sequencedict:                 # Save sequences for fasta
-                if gbid not in sequencedict[stdname]:   # Avoid duplicate gene records
-                    sequencedict[stdname][gbid] = [txid, tax, seq, frame]
+            txids[txid][stdname] = len(seq)
 
-            else:
-                sequencedict[stdname] = {gbid: [txid, tax, seq, frame]}
+for txid, data in txids.items():
+    row = [",".join(data['gbids']), txid, data['species']]          # Start row of metadata for CSV
 
-            if stdname not in feats.keys():             # Save lengths for metadata
-                feats[stdname] = len(seq)
 # Continue row of metadata csv
     for g in gen:
-        if g in feats:
-            row.append(feats[g])
+        if g in data.keys():
+            row.append(data[g])
         else:
             row.append("")
-    row.extend(taxonomy)
-    row2 = [genus_spec[0], rec.description, gbid+tax, rec.annotations["date"], c_date, country, region, latlon,]
-    row2.extend(refs)
-    row = row + row2
-    if y > 0:
-        writer.writerow(row)
+    row.extend(data['taxonomy'])
+    row.append(data['gs'][0])
+    writer.writerow(row)
 
 print(f"{str(x)} records found")
 print("Metadata saved to metadata.csv")
