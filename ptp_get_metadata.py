@@ -94,7 +94,7 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
 #"EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
 
 # Write CSV metadata file
-with open("metadata.csv", "w") as file:     # Open output file
+with open("metadataptp.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
         ["Accessions", "Taxon ID", "Species", '12S', "16S", "18S", "H3", 'Wg',
