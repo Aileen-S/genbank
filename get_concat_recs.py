@@ -3,8 +3,6 @@
 
 #python3 get_concat_recs.py -e mixedupvoyage@gmail.com -f test.txt -r gbid -i both
 
-# Make dict of subgenus names: new colum for genus, renamed from subgenus dict if necessary.
-
 import argparse
 import csv
 from Bio import Entrez
@@ -64,7 +62,6 @@ parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-f', '--file', type=str, help="Input file with accession or taxon ID list")
 parser.add_argument('-r', '--ref', choices=['txid', 'gbid'], help="If using --file option, specify accessions or taxon IDs.")
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
-parser.add_argument('-b', '--both', action="store_true", help="Print taxon ID and accession in output fastas.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 
@@ -100,15 +97,6 @@ nuc = ['AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 rna = ['12S', '16S', '18S', '28S']
 cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 
-
-subtribes = {'Deronectina': ['Amurodytes', 'Boreonectes', 'Clarkhydrus', 'Deronectes', 'Deuteronectes', 'Hornectes', 'Iberonectes',
-                             'Larsonectes', 'Leconectes', 'Mystonectes', 'Nebrioporus', 'Nectoboreus', 'Nectomimus', 'Nectoporus',
-                             'Neonectes', 'Oreodytes', 'Scarodytes', 'Stictotarsus', 'Trichonectes', 'Zaitzevhydrus'],
-             'Hydroporina': ['Haideoporus', 'Heterosternuta', 'Hydrocolus', 'Hydroporus', 'Neoporus', 'Sanfilippodytes'],
-             'Siettitiina': ['Ereboporus', 'Etruscodytes', 'Graptodytes', 'Iberoporus', 'Lioporeus', 'Metaporus', 'Porhydrus',
-                             'Psychopomporus', 'Rhithrodytes', 'Siettitia', 'Stictonectes', 'Stygoporus'],
-             'Sternopriscina': ['Antiporus', 'Barretthydrus', 'Brancuporus', 'Carabhydrus', 'Chostonectes', 'Megaporus',
-                                'Necterosoma', 'Paroster', 'Sekaliporus', 'Sternopriscus', 'Tiporus']}
 
 unrec_genes = set()
 unrec_species = []
@@ -157,15 +145,16 @@ else:
         print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
               f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
-        y = 0  # Count records saved
-        for tax in taxids:
-            y += 1
-            if y % 100 == 0:
-                print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
-                      f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
-            handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
-            record = Entrez.read(handle)
-            accs   = record["IdList"]   # Get GBIDs
+    y = 0  # Count records saved
+    accs = []
+    for tax in taxids:
+        y += 1
+        if y % 100 == 0:
+            print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
+                  f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
+        handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
+        record = Entrez.read(handle)
+        accs   = accs + record["IdList"]   # Get GBIDs
 
 # Search through GBIDs
 species = {}
@@ -210,11 +199,13 @@ for rec in record:
     else:
         c_date = ""
     refs = []
-    for ref in rec.annotations["references"]:
-        refs.append(ref.authors)
-        refs.append(ref.title)
-        refs.append(ref.journal)
-
+    if "references" in rec.annotations:
+        for ref in rec.annotations["references"]:
+            refs.append(ref.authors)
+            refs.append(ref.title)
+            refs.append(ref.journal)
+    else:
+        continue
     for feature in rec.features:
         type = feature.type
         if type not in ('CDS', 'rRNA'):
@@ -272,9 +263,9 @@ for rec in record:
 print(f"\n{x} gene records saved to species dict")
 
 print("\nUnrecognised Genes")
-print(unrec_genes)
-print("\nUnrecognised Species")
-print(unrec_species)
+print(f'{unrec_genes}\n')
+#print("\nUnrecognised Species")
+#print(unrec_species)
 
 
 # Set record length as 0, iterate through records and replace whenever another sequence is longer.
@@ -306,7 +297,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Subtribe', 'Genus', "Description", "Date Late Modified",
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
@@ -347,12 +338,6 @@ for gene, records in longest.items():
         for k, v in subgenus.items():
             if genus in v:
                 genus = k
-        for k, v in subtribes.items():
-            if genus in v:
-                subtribe = k
-            else:
-                subtribe = ''
-        row.append(subtribe)
         row.append(genus)
         row.append(output["description"])
         row.append(output["rec date"])
