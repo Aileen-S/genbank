@@ -71,6 +71,8 @@ args = parser.parse_args()         # Process input args from command line
 
 coi = ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1']
 
+#CYTOCHROME C OXIDASE SUBUNIT 1 OR CYTOCHROME OXIDASE SUBUNIT I OR CYTOCHROME C OXIDASE SUBUNIT I OR COXI OR CO1 OR COI OR CYTOCHROME COXIDASE SUBUNIT I OR CYTOCHROME OXIDASE SUBUNIT 1 OR CYTOCHROME OXYDASE SUBUNIT 1 OR COX1
+
 
 unrec_genes = set()
 unrec_species = []
@@ -96,7 +98,7 @@ else:
     if args.taxon:
         # Generate search term to get all sequences in the search taxonomy
         # - if -n option not used, then include "mitochondrial" in search term.
-        basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
+        basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields] AND (CYTOCHROME C OXIDASE SUBUNIT 1 OR CYTOCHROME OXIDASE SUBUNIT I OR CYTOCHROME C OXIDASE SUBUNIT I OR COXI OR CO1 OR COI OR CYTOCHROME COXIDASE SUBUNIT I OR CYTOCHROME OXIDASE SUBUNIT 1 OR CYTOCHROME OXYDASE SUBUNIT 1 OR COX1))"
 
         # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
         # Make the search generator
@@ -127,10 +129,13 @@ else:
     y = 0  # Count records saved
     accs = []
     for tax in taxids:
-        y += 1
         if y % 100 == 0:
             print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
                   f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
+            gbfile = open('gbids.txt', 'w')
+            for acc in accs:
+                gbfile.write(f'{acc}\n')
+        y += 1
         handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
         record = Entrez.read(handle)
         accs   = accs + record["IdList"]   # Get GBIDs
