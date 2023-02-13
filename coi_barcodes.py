@@ -118,6 +118,11 @@ else:
     print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
           f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
+    txfile = open('txids.txt', 'w')
+    for txid in taxids:
+        txfile.write(f'{txid}\n')
+    print('Taxon IDs saved to txids.txt')
+
     y = 0  # Count records saved
     accs = []
     for tax in taxids:
