@@ -57,7 +57,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 
 # Argument parser
 # Add option to find only mito genes, or only selected genes.
-parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequences and save as fasta.")
+parser = argparse.ArgumentParser(description="Search GenBank, retrieve COI sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-f', '--file', type=str, help="Input file with accession or taxon ID list")
 parser.add_argument('-r', '--ref', choices=['txid', 'gbid'], help="If using --file option, specify accessions or taxon IDs.")
@@ -93,35 +93,36 @@ else:
             taxid = line.strip()
             taxids.append(taxid)
 
-    # Generate search term to get all sequences in the search taxonomy
-    # - if -n option not used, then include "mitochondrial" in search term.
-    basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
+    if args.taxon:
+        # Generate search term to get all sequences in the search taxonomy
+        # - if -n option not used, then include "mitochondrial" in search term.
+        basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
 
-    # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
-    # Make the search generator
-    searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
+        # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
+        # Make the search generator
+        searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
 
-    taxids = set()
-    i = 0
-    for gbids, summaries in searchgen:
-        # gbids, summaries = next(searchgen)
-        i += 1
-        taxa = set(int(s['TaxId']) for s in summaries)
-        taxids.update(taxa)
-        print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
+        taxids = set()
+        i = 0
+        for gbids, summaries in searchgen:
+            # gbids, summaries = next(searchgen)
+            i += 1
+            taxa = set(int(s['TaxId']) for s in summaries)
+            taxids.update(taxa)
+            print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
 
-    # Some of these will be subspecies.
-    # You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
-    # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
-    print(f"{len(taxids)} unique taxon IDs saved")
-    print("Searching GenBank")
-    print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
-          f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
+        # Some of these will be subspecies.
+        # You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
+        # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
+        print(f"{len(taxids)} unique taxon IDs saved")
+        print("Searching GenBank")
+        print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
+              f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
-    txfile = open('txids.txt', 'w')
-    for txid in taxids:
-        txfile.write(f'{txid}\n')
-    print('Taxon IDs saved to txids.txt')
+        txfile = open('txids.txt', 'w')
+        for txid in taxids:
+            txfile.write(f'{txid}\n')
+        print('Taxon IDs saved to txids.txt')
 
     y = 0  # Count records saved
     accs = []
@@ -277,8 +278,8 @@ for output in longest:
     writer.writerow(row)
 
 file = open(f"COI.fasta", "w")
+x = 0
 for rec in longest:
-    x = 0
     if args.fasta_id:
         if args.fasta_id == 'txid':
             f_id = rec['txid']
