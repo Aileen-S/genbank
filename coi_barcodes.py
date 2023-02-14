@@ -78,72 +78,24 @@ unrec_genes = set()
 unrec_species = []
 Entrez.email = args.email
 
-if args.ref == 'gbid':
-    accs = []
-    file = open(args.file)
-    lines = file.readlines()
-    for line in lines:
-        acc = line.strip()
-        accs.append(acc)
 
-else:
-    if args.ref  == 'txid':
-        taxids = []
-        file = open(args.file)
-        lines = file.readlines()
-        for line in lines:
-            taxid = line.strip()
-            taxids.append(taxid)
+# Generate search term to get all sequences in the search taxonomy
+# - if -n option not used, then include "mitochondrial" in search term.
+basesearch = f"(\"{args.taxon}\"[Organism:exp])"
 
-    if args.taxon:
-        # Generate search term to get all sequences in the search taxonomy
-        # - if -n option not used, then include "mitochondrial" in search term.
-        basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields] AND (CYTOCHROME C OXIDASE SUBUNIT 1 OR CYTOCHROME OXIDASE SUBUNIT I OR CYTOCHROME C OXIDASE SUBUNIT I OR COXI OR CO1 OR COI OR CYTOCHROME COXIDASE SUBUNIT I OR CYTOCHROME OXIDASE SUBUNIT 1 OR CYTOCHROME OXYDASE SUBUNIT 1 OR COX1))"
-
-        # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
-        # Make the search generator
-        searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
-
-        taxids = set()
-        i = 0
-        for gbids, summaries in searchgen:
-            # gbids, summaries = next(searchgen)
-            i += 1
-            taxa = set(int(s['TaxId']) for s in summaries)
-            taxids.update(taxa)
-            print(f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
-
-        # Some of these will be subspecies.
-        # You need to search them in NCBI Taxonomy to weed out the subspecies and generate a list of latin biomials.
-        # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
-        print(f"{len(taxids)} unique taxon IDs saved")
-        print("Searching GenBank")
-
-        txfile = open('txids.txt', 'w')
-        for txid in taxids:
-            txfile.write(f'{txid}\n')
-        print('Taxon IDs saved to txids.txt')
-
-    y = 0  # Count records saved
-    accs = []
-    for tax in taxids:
-        if y % 100 == 0:
-            print(f"Searching GenBank for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
-                  f"Searching GenBank for for taxon IDs {y+1} to {len(taxids)}")
-        y += 1
-        handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
-        record = Entrez.read(handle)
-        accs   = accs + record["IdList"]   # Get GBIDs
-    gbfile = open('gbids.txt', 'w')
-    for acc in accs:
-        gbfile.write(f'{acc}\n')
-    print('GenBank IDs saved to gbids.txt')
+# Retrieve all taxids that represent tips of the NCBI Taxonomy tree
+# Make the search generator
+searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
+taxids = set()
+i = 0
+for gbids, summaries in searchgen:
+    ids = gbids
 
 # Search through GBIDs
 species = {}
 x = 0  # Count taxids
-accstr = ",".join(accs)                                           # Join into string for efetch
-handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
+idstr = ",".join(ids)                                           # Join into string for efetch
+handle = Entrez.efetch(db="nucleotide", id=idstr, rettype="gb", retmode="text")  # Get GenBanks
 record = SeqIO.parse(handle, "gb")
 print('Searching GenBank records for COI sequences')
 for rec in record:
@@ -198,7 +150,12 @@ for rec in record:
         if name not in coi:
             unrec_genes.add(name)
             continue
+        else:
+            print(rec.name)
+            print(rec.annotations["organism"])
+            print(name)
         seq = feature.extract(rec.seq)
+        print(len(seq))
         if 'codon_start' in feature.qualifiers:
             frame = feature.qualifiers["codon_start"]
         else:
