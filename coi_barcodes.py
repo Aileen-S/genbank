@@ -118,8 +118,6 @@ else:
         # Then iterate through each of these binomials (not taxids as initially thought) to download the sequences etc
         print(f"{len(taxids)} unique taxon IDs saved")
         print("Searching GenBank")
-        print("Downloading GenBank records for taxon IDs 0 to 100" if len(taxids) > 100 else
-              f"Downloading GenBank records for taxon IDs 0 to {len(taxids)}")
 
         txfile = open('txids.txt', 'w')
         for txid in taxids:
@@ -130,15 +128,16 @@ else:
     accs = []
     for tax in taxids:
         if y % 100 == 0:
-            print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
-                  f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
-            gbfile = open('gbids.txt', 'w')
-            for acc in accs:
-                gbfile.write(f'{acc}\n')
+            print(f"Searching GenBank for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
+                  f"Searching GenBank for for taxon IDs {y+1} to {len(taxids)}")
         y += 1
         handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
         record = Entrez.read(handle)
         accs   = accs + record["IdList"]   # Get GBIDs
+    gbfile = open('gbids.txt', 'w')
+    for acc in accs:
+        gbfile.write(f'{acc}\n')
+    print('GenBank IDs saved to gbids.txt')
 
 # Search through GBIDs
 species = {}
@@ -146,6 +145,7 @@ x = 0  # Count taxids
 accstr = ",".join(accs)                                           # Join into string for efetch
 handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
 record = SeqIO.parse(handle, "gb")
+print('Searching GenBank records for COI sequences')
 for rec in record:
     if args.taxon:
         if args.taxon not in rec.annotations["taxonomy"]:
