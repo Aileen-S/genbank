@@ -199,8 +199,6 @@ for rec in record:
             unrec_genes.add(name)
             continue
         seq = feature.extract(rec.seq)
-        if 680 <= len(seq) <= 1000:
-            continue
         if 'codon_start' in feature.qualifiers:
             frame = feature.qualifiers["codon_start"]
         else:
