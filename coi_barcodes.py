@@ -78,35 +78,61 @@ unrec_genes = set()
 unrec_species = []
 Entrez.email = args.email
 
-
-# Generate search term to get all sequences in the search taxonomy
-# - if -n option not used, then include "mitochondrial" in search term.
-basesearch = f"(\"{args.taxon}\"[Organism:exp])"
-
 # Retrieve all taxids that represent tips of the NCBI Taxonomy tree
 # Make the search generator
-searchgen = search_nuc(term=basesearch, summaries=True, chunk=5000)
 taxids = set()
+searchgen = search_nuc(term=args.taxon, summaries=True, chunk=5000)
 i = 0
 for gbids, summaries in searchgen:
-    ids = gbids
+    # gbids, summaries = next(searchgen)
+    i += 1
+    taxa = set(int(s['TaxId']) for s in summaries)
+    taxids.update(taxa)
+    print(
+        f"iteration={i}, returns={len(gbids)}, first gbid={gbids[0]}, first summary accession={summaries[0]['Caption']}, taxids in this iteration={len(taxa)}, total taxids={len(taxids)}")
+
+print(f'{len(taxids)} taxon IDs found')
+
+print(f'\nTaxids: {taxids}\n')
+
+
+y = 0  # Count records saved
+accs = []
+for tax in taxids:
+    y += 1
+    if y % 100 == 0:
+        print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
+              f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
+    handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
+    record = Entrez.read(handle)
+    accs   = accs + record["IdList"]   # Get GBIDs
+
+taxo = 0
+taxonomylist = []
+refo = 0
+refslist = []
+duds = set()
+taxidslist = open("taxids.txt", 'w')
 
 # Search through GBIDs
 species = {}
 x = 0  # Count taxids
-idstr = ",".join(ids)                                           # Join into string for efetch
-handle = Entrez.efetch(db="nucleotide", id=idstr, rettype="gb", retmode="text")  # Get GenBanks
+accstr = ",".join(accs)                                           # Join into string for efetch
+handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
 record = SeqIO.parse(handle, "gb")
 print('Searching GenBank records for COI sequences')
 for rec in record:
     if args.taxon:
         if args.taxon not in rec.annotations["taxonomy"]:
             unrec_species.append(rec.name)
+            taxo += 1
+            taxonomylist.append(rec.name)
             continue
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
         if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
             txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
+    taxidslist.write(f'{txid}\n')
     spec = rec.annotations["organism"]
     specfasta = spec.replace(" ", "_")
     taxonomy = rec.annotations["taxonomy"][10:15]
@@ -140,6 +166,8 @@ for rec in record:
             refs.append(ref.title)
             refs.append(ref.journal)
     else:
+        refo += 1
+        refslist.append(rec.name)
         continue
     for feature in rec.features:
         type = feature.type
@@ -150,12 +178,7 @@ for rec in record:
         if name not in coi:
             unrec_genes.add(name)
             continue
-        else:
-            print(rec.name)
-            print(rec.annotations["organism"])
-            print(name)
         seq = feature.extract(rec.seq)
-        print(len(seq))
         if 'codon_start' in feature.qualifiers:
             frame = feature.qualifiers["codon_start"]
         else:
@@ -179,8 +202,8 @@ for rec in record:
                   "latlon": latlon,
                   "refs": refs}
         if txid in species:                              # If taxon ID in dict
-                species[txid].append(output)    # Add gene info list to dict
-                x += 1
+            species[txid].append(output)    # Add gene info list to dict
+            x += 1
         else:
             species[txid] = [output]      # Otherwise add to dict with new key
             x += 1
@@ -190,8 +213,11 @@ print(f"\n{x} gene records saved to species dict")
 
 print("\nUnrecognised Genes")
 print(f'{unrec_genes}\n')
-#print("\nUnrecognised Species")
-#print(unrec_species)
+
+print(f'Taxonomy filter: {taxo} {taxonomylist}')
+print(f'Reference filter: {refo} {refslist}')
+print("\nUnrecognised Species")
+print(unrec_species)
 
 
 # Set record length as 0, iterate through records and replace whenever another sequence is longer.
@@ -237,7 +263,7 @@ for output in longest:
     row.extend(output["refs"])
     writer.writerow(row)
 
-file = open(f"COI.fasta", "w")
+file = open("COI.fasta", "w")
 x = 0
 for rec in longest:
     if args.fasta_id:
