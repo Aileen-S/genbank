@@ -99,13 +99,13 @@ print(f'\nTaxids: {taxids}\n')
 y = 0  # Count records saved
 accs = []
 for tax in taxids:
-    y += 1
     if y % 100 == 0:
         print(f"Downloading GenBank records for taxon IDs {y+1} to {y+100}" if (y+100) < len(taxids) else
               f"Downloading GenBank records for taxon IDs {y+1} to {len(taxids)}")
     handle = Entrez.esearch(db="nucleotide", term=f"txid{tax}")       # Search for all records for each taxon id
     record = Entrez.read(handle)
     accs   = accs + record["IdList"]   # Get GBIDs
+    y += 1
 
 taxo = 0
 taxonomylist = []
@@ -126,7 +126,7 @@ for rec in record:
         if args.taxon not in rec.annotations["taxonomy"]:
             unrec_species.append(rec.name)
             taxo += 1
-            taxonomylist.append(rec.name)
+            taxonomylist.append([rec.name, rec.description])
             continue
     db_xref = rec.features[0].qualifiers["db_xref"]
     for ref in db_xref:
@@ -137,10 +137,7 @@ for rec in record:
     specfasta = spec.replace(" ", "_")
     taxonomy = rec.annotations["taxonomy"][10:15]
     taxonomy.extend([""] * (5 - len(taxonomy)))
-    if taxonomy[4] == "Cybistrini":
-        taxonomy[3] = "Cybistrinae"
     fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
-
     if "country" in rec.features[0].qualifiers:
         location = rec.features[0].qualifiers["country"][0]
         if ":" in location:
@@ -168,7 +165,7 @@ for rec in record:
     else:
         refo += 1
         refslist.append(rec.name)
-        continue
+        #continue
     for feature in rec.features:
         type = feature.type
         if type not in ('CDS', 'rRNA'):
