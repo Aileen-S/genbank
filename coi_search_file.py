@@ -84,7 +84,7 @@ unrec_genes = set()
 # Search through GBIDs
 print(f'Searching {args.file} for COI sequences')
 
-
+sequences = []
 species = {}
 x = 0  # Count taxids
 r = 0  # Count records
@@ -143,6 +143,10 @@ with open(args.file) as file:      # Specify location and name file
                 unrec_genes.add(name)
                 continue
             seq = feature.extract(rec.seq)
+            if seq in sequences:
+                continue
+            else:
+                sequences.append(seq)
             if len(seq) >= 700:
                 continue
             if 'codon_start' in feature.qualifiers:
