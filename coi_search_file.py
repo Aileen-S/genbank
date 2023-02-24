@@ -220,8 +220,8 @@ with open(f"{args.file.split('.')[0]}_metadata.csv", "w") as file:     # Open ou
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-file = open(f"{args.file.split('.')[0]}_metadata.csv", "a")
-writer = csv.writer(file)
+meta = open(f"{args.file.split('.')[0]}_metadata.csv", "a")
+writer = csv.writer(meta)
 
 if args.all:
     for tax, records in species.items():
