@@ -66,9 +66,6 @@ parser.add_argument('-a', '--all', action="store_true", help="Choose to keep all
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 
-print(f"Metadata saved to {args.file.split('.')[0]}_metadata.csv")
-quit()
-
 coi = ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1']
 
 #CYTOCHROME C OXIDASE SUBUNIT 1 OR CYTOCHROME OXIDASE SUBUNIT I OR CYTOCHROME C OXIDASE SUBUNIT I OR COXI OR CO1 OR COI OR CYTOCHROME COXIDASE SUBUNIT I OR CYTOCHROME OXIDASE SUBUNIT 1 OR CYTOCHROME OXYDASE SUBUNIT 1 OR COX1
