@@ -60,6 +60,8 @@ def search_nuc(term, summaries=False, chunk=10000):
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve COI sequences and save as fasta.")
 parser.add_argument('-f', '--file', type=str, help="Input file with accession or taxon ID list")
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid'], help="Choose identifier for output fastas. Default is both txid and gbid.")
+parser.add_argument('-a', '--all', action="store_true", help="Choose to keep all sequences, rather than only longest for each txid.")
+
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
@@ -141,7 +143,7 @@ with open(args.file) as file:      # Specify location and name file
                 unrec_genes.add(name)
                 continue
             seq = feature.extract(rec.seq)
-            if 657 <= len(seq) <= 658:
+            if len(seq) >= 700:
                 continue
             if 'codon_start' in feature.qualifiers:
                 frame = feature.qualifiers["codon_start"]
@@ -206,7 +208,7 @@ for tax, records in species.items():
 # Save each gene list to separate fasta file
 
 # Write CSV metadata file
-with open("metadata.csv", "w") as file:     # Open output file
+with open(f"{args.file.split('.')[0]}_metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
         ["Accession", "Taxon ID", "Species", 'COI Length',
@@ -214,39 +216,70 @@ with open("metadata.csv", "w") as file:     # Open output file
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-file = open(f"{args.input.split('.')[0]}_metadata.csv", "a")
+file = open(f"{args.file.split('.')[0]}_metadata.csv", "a")
 writer = csv.writer(file)
 
-for output in longest:
-    row = [output["gbid"], output["txid"], output["spec"], output['length']]
-    row.extend(output["taxonomy"])
-    gen_spec = output['spec'].split(' ')
-    genus = gen_spec[0]
-    row.append(genus)
-    row.append(output["description"])
-    row.append(output["rec date"])
-    row.append(output["c date"])
-    row.append(output["country"])
-    row.append(output["region"])
-    row.append(output["latlon"])
-    row.extend(output["refs"])
-    writer.writerow(row)
+if args.all:
+    for tax, records in species.items():
+        for output in records:
+            row = [output["gbid"], output["txid"], output["spec"], output['length']]
+            row.extend(output["taxonomy"])
+            gen_spec = output['spec'].split(' ')
+            genus = gen_spec[0]
+            row.append(genus)
+            row.append(output["description"])
+            row.append(output["rec date"])
+            row.append(output["c date"])
+            row.append(output["country"])
+            row.append(output["region"])
+            row.append(output["latlon"])
+            row.extend(output["refs"])
+            writer.writerow(row)
 
-file = open(f"{args.input.split('.')[0]}.fasta", "w")
-x = 0
-for rec in longest:
-    if args.fasta_id:
-        if args.fasta_id == 'txid':
-            f_id = rec['txid']
-        if args.fasta_id == 'gbid':
-            f_id = rec['gbid']
+        file = open(f"{args.file.split('.')[0]}.fasta", "w")
+        x = 0
+        for rec in records:
+            if args.fasta_id:
+                if args.fasta_id == 'txid':
+                    f_id = rec['txid']
+                if args.fasta_id == 'gbid':
+                    f_id = rec['gbid']
+            else:
+                f_id = f"{rec['txid']}_{rec['gbid']}"
+            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            x += 1
+
     else:
-        f_id = f"{rec['txid']}_{rec['gbid']}"
-    file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
-    x += 1
+        for output in longest:
+            row = [output["gbid"], output["txid"], output["spec"], output['length']]
+            row.extend(output["taxonomy"])
+            gen_spec = output['spec'].split(' ')
+            genus = gen_spec[0]
+            row.append(genus)
+            row.append(output["description"])
+            row.append(output["rec date"])
+            row.append(output["c date"])
+            row.append(output["country"])
+            row.append(output["region"])
+            row.append(output["latlon"])
+            row.extend(output["refs"])
+            writer.writerow(row)
 
-print(f'{x} records written to COI.fasta')
-print("Metadata saved to metadata.csv")
+        file = open(f"{args.file.split('.')[0]}.fasta", "w")
+        x = 0
+        for rec in longest:
+            if args.fasta_id:
+                if args.fasta_id == 'txid':
+                    f_id = rec['txid']
+                if args.fasta_id == 'gbid':
+                    f_id = rec['gbid']
+            else:
+                f_id = f"{rec['txid']}_{rec['gbid']}"
+            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            x += 1
+
+print(f'{x} records written to {args.file.split(".")[0]}.fasta')
+print(f"Metadata saved to {args.file.split('.')[0]}_metadata.csv")
 
 
 
