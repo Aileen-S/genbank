@@ -59,7 +59,7 @@ def search_nuc(term, summaries=False, chunk=10000):
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank, retrieve COI sequences and save as fasta.")
 parser.add_argument('-f', '--file', type=str, help="Input file with accession or taxon ID list")
-parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
+parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid'], help="Choose identifier for output fastas. Default is both txid and gbid.")
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
@@ -238,10 +238,10 @@ for rec in longest:
     if args.fasta_id:
         if args.fasta_id == 'txid':
             f_id = rec['txid']
-        if args.fasta_id == 'both':
-            f_id = f"{rec['txid']}_{rec['gbid']}"
+        if args.fasta_id == 'gbid':
+            f_id = rec['gbid']
     else:
-        f_id = rec['gbid']
+        f_id = f"{rec['txid']}_{rec['gbid']}"
     file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
     x += 1
 
