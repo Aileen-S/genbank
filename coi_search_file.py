@@ -223,7 +223,10 @@ with open(f"{args.file.split('.')[0]}_metadata.csv", "w") as file:     # Open ou
 meta = open(f"{args.file.split('.')[0]}_metadata.csv", "a")
 writer = csv.writer(meta)
 
+fasta = open(f"{args.file.split('.')[0]}.fasta", "w")
+
 if args.all:
+    x = 0
     for tax, records in species.items():
         for output in records:
             row = [output["gbid"], output["txid"], output["spec"], output['length']]
@@ -240,8 +243,7 @@ if args.all:
             row.extend(output["refs"])
             writer.writerow(row)
 
-        file = open(f"{args.file.split('.')[0]}.fasta", "w")
-        x = 0
+
         for rec in records:
             if args.fasta_id:
                 if args.fasta_id == 'txid':
@@ -250,37 +252,37 @@ if args.all:
                     f_id = rec['gbid']
             else:
                 f_id = f"{rec['txid']}_{rec['gbid']}"
-            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            fasta.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
             x += 1
 
-    else:
-        for output in longest:
-            row = [output["gbid"], output["txid"], output["spec"], output['length']]
-            row.extend(output["taxonomy"])
-            gen_spec = output['spec'].split(' ')
-            genus = gen_spec[0]
-            row.append(genus)
-            row.append(output["description"])
-            row.append(output["rec date"])
-            row.append(output["c date"])
-            row.append(output["country"])
-            row.append(output["region"])
-            row.append(output["latlon"])
-            row.extend(output["refs"])
-            writer.writerow(row)
+else:
+    print('using longest dict')
+    for output in longest:
+        row = [output["gbid"], output["txid"], output["spec"], output['length']]
+        row.extend(output["taxonomy"])
+        gen_spec = output['spec'].split(' ')
+        genus = gen_spec[0]
+        row.append(genus)
+        row.append(output["description"])
+        row.append(output["rec date"])
+        row.append(output["c date"])
+        row.append(output["country"])
+        row.append(output["region"])
+        row.append(output["latlon"])
+        row.extend(output["refs"])
+        writer.writerow(row)
 
-        file = open(f"{args.file.split('.')[0]}.fasta", "w")
-        x = 0
-        for rec in longest:
-            if args.fasta_id:
-                if args.fasta_id == 'txid':
-                    f_id = rec['txid']
-                if args.fasta_id == 'gbid':
-                    f_id = rec['gbid']
-            else:
-                f_id = f"{rec['txid']}_{rec['gbid']}"
-            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
-            x += 1
+    x = 0
+    for rec in longest:
+        if args.fasta_id:
+            if args.fasta_id == 'txid':
+                f_id = rec['txid']
+            if args.fasta_id == 'gbid':
+                f_id = rec['gbid']
+        else:
+            f_id = f"{rec['txid']}_{rec['gbid']}"
+        fasta.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+        x += 1
 
 print(f'{x} records written to {args.file.split(".")[0]}.fasta')
 print(f"Metadata saved to {args.file.split('.')[0]}_metadata.csv")
