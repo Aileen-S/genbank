@@ -214,7 +214,7 @@ with open("metadata.csv", "w") as file:     # Open output file
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-file = open("metadata.csv", "a")
+file = open(f"{args.input.split('.')[0]}_metadata.csv", "a")
 writer = csv.writer(file)
 
 for output in longest:
@@ -232,7 +232,7 @@ for output in longest:
     row.extend(output["refs"])
     writer.writerow(row)
 
-file = open("COI.fasta", "w")
+file = open(f"{args.input.split('.')[0]}.fasta", "w")
 x = 0
 for rec in longest:
     if args.fasta_id:
