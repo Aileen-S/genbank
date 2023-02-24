@@ -66,6 +66,8 @@ parser.add_argument('-a', '--all', action="store_true", help="Choose to keep all
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 
+print(f"Metadata saved to {args.file.split('.')[0]}_metadata.csv")
+quit()
 
 coi = ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1']
 
@@ -147,8 +149,6 @@ with open(args.file) as file:      # Specify location and name file
                 continue
             else:
                 sequences.append(seq)
-            if len(seq) >= 700:
-                continue
             if 'codon_start' in feature.qualifiers:
                 frame = feature.qualifiers["codon_start"]
             else:
