@@ -1,18 +1,15 @@
 from Bio import SeqIO
 import argparse
 
-parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs.")
-parser.add_argument("-i", "--input", type=str, help="File to be filtered")
-parser.add_argument('-p', '--partial_file', action='store_true', help='Specify if filter file contains terms/IDs to search for'
-                                                                 ' (rather than the whole identifier)')
-parser.add_argument('-s', '--string', type=str, help='Single string to search for in sequence identifiers, '
-                                                     'instead of -f or -p options')
-parser.add_argument("-f", "--filter", type=str, help="ID list")
+parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs. Choose either -p, -s or -f flag.")
+parser.add_argument("-i", "--input", type=str, help="Input fasta to be filtered")
+parser.add_argument('-p', '--partial_file', action='store_true', help='File containing terms/IDs to search for in sequence identifiers')
+parser.add_argument('-s', '--string', type=str, help='Single string to search for in sequence identifiers')
+parser.add_argument("-f", "--filter", type=str, help="File containing list of sequence identifiers to extract from input file")
 parser.add_argument("-o", "--output", type=str, help="Output file")
 args = parser.parse_args()
 
-#args = argparse.Namespace(input='ATP6.fasta', filter='test.txt') # This is how I step through the script interactively
-
+#args = argparse.Namespace(input='ATP6.fasta', filter='test.txt')
 
 if args.partial_file:
     with open(args.filter) as id_handle:
