@@ -12,7 +12,7 @@ args = parser.parse_args()
 #args = argparse.Namespace(input='ATP6.fasta', filter='test.txt')
 
 if args.partial_file:
-    with open(args.filter) as id_handle:
+    with open(args.partial_file) as id_handle:
         ids = set(line.rstrip("\n").split(None, 1)[0] for line in id_handle)
         print(f"Found {len(ids)} unique identifiers in {args.filter}")
         print(f"Searching {args.input}")
