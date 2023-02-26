@@ -7,7 +7,8 @@ from Bio import Entrez
 from Bio import SeqIO
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Get list of genera represented on GenBank. Input either higher taxonomy Latin name or taxon ID.")
+parser = argparse.ArgumentParser(description="Get list of genera represented on GenBank. Input either higher taxonomy Latin name or taxon ID."
+                                             "For unclassified organisms, lowest taxonomic rank available is saved.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest - Linean name or NCBI higher taxon ID")
 parser.add_argument("-o", "--output", type=str, help="Output file")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
@@ -43,6 +44,8 @@ for start in range(0, count, 10000):
     handle = Entrez.efetch(db="nucleotide", id=gbids, rettype="gb", retmode="text")  # Get GenBanks
     record = SeqIO.parse(handle, "gb")
     for rec in record:
+        if args.taxon not in rec.annotations['taxonomy']:
+            continue
         gen_spec = rec.annotations["organism"].split(' ')
         genus = gen_spec[0]
         genera.add(genus)
