@@ -15,10 +15,19 @@ if args.output:
 else:
     output = open(f'{args.input}.out', 'w')
 
+x = 0
 lines = file.readlines()
+print(f'Searching /mbl/share/workspaces/groups/voglerlab/MMGdatabase/{args.version}/ for IDs in {args.input}')
 for line in lines:
     line = line.strip()
-    name = f'/mbl/share/workspaces/groups/voglerlab/MMGdatabase/{args.version}/{line}.gb'
+    try:
+        name = f'/mbl/share/workspaces/groups/voglerlab/MMGdatabase/{args.version}/{line}.gb'
+        x += 1
+    except FileNotFoundError:
+        print(f'No record found for {line}')
+        continue
     record = open(name)
     record = record.read()
     output.write(record)
+
+print(f'{x} records saved to {output}')
