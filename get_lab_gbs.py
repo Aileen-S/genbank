@@ -23,11 +23,10 @@ for line in lines:
     try:
         name = f'/mbl/share/workspaces/groups/voglerlab/MMGdatabase/{args.version}/{line}.gb'
         x += 1
+        record = open(name)
+        record = record.read()
+        output.write(record)
     except FileNotFoundError:
         print(f'No record found for {line}')
-        continue
-    record = open(name)
-    record = record.read()
-    output.write(record)
 
 print(f'{x} records saved to {output}')
