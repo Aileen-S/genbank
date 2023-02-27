@@ -198,7 +198,10 @@ for rec in record:
     x += 1
     y = 0
     species = rec.annotations["organism"]
-    genus_spec = species.split(' ', 1)   #.split('mango', 1)[1]
+    species = species.replace(">", "_")
+    species = species.replace("<", "_")
+    species = species.replace(".", "")
+    genus_spec = species.split(' ', 1)
     for k, v in subgenus.items():
         if genus_spec[0] in v:
             genus_spec[0] = k
