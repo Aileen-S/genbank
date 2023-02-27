@@ -173,9 +173,7 @@ for rec in record:
         if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
             txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
     spec = rec.annotations["organism"]
-    spec = spec.replace(">", "_")
-    spec = spec.replace("<", "_")
-    spec = spec.replace(".", "")
+    spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_').replace(')', '_')
     specfasta = spec.replace(" ", "_")
     taxonomy = rec.annotations["taxonomy"][10:15]
     taxonomy.extend([""] * (5 - len(taxonomy)))
