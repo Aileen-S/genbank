@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 output = open(args.output, 'w')
 x = 0
-with open(args.hmmer) as infile:
+with open(args.input) as infile:
     lines = infile.readlines()
     for line in lines:
         if '#' in line:
