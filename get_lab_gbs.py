@@ -29,4 +29,5 @@ for line in lines:
     except FileNotFoundError:
         print(f'No record found for {line}')
 
-print(f'{x} records saved to {output}')
+print(f'{x} records saved to {args.output}' if args.output else
+      f'{x} records saved to {args.input}.out')
