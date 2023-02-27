@@ -18,7 +18,7 @@ args = parser.parse_args()
 if args.partial_file:
     with open(args.partial_file) as infile:
         ids = set(line.rstrip("\n").split(None, 1)[0] for line in infile)
-        print(f"Found {len(ids)} unique identifiers in {args.filter}")
+        print(f"Found {len(ids)} unique identifiers in {args.partial_file}")
         wanted = []
         for r in SeqIO.parse(args.input, "fasta"):
             for i in ids:
@@ -42,13 +42,14 @@ elif args.hmmer:
                 continue
             line = line.split(' ')
             wanted.append(line[0])
+            print(f"Found {len(wanted)} unique identifiers in {args.hmmer}")
+
 
 
 else:
     with open(args.filter) as infile:
         wanted = set(line.rstrip("\n").split(None, 1)[0] for line in infile)
-
-print(f"Found {len(wanted)} unique identifiers in {args.filter}")
+        print(f"Found {len(wanted)} unique identifiers in {args.filter}")
 print(f"Searching {args.input}")
 
 records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
