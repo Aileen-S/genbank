@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs
 parser.add_argument("-i", "--ingroup", type=str, help="Ingroup fasta")
 parser.add_argument("-o", "--outgroup", type=str, help="Outgroup fasta")
 
-fast = open("fasttree_consraint.txt", 'w')
+fast = open("fasttree_constraint.txt", 'w')
 ins = []
 args = parser.parse_args()
 for taxon in SeqIO.parse(args.ingroup, "fasta"):
