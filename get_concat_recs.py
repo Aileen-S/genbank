@@ -63,7 +63,7 @@ parser.add_argument('-f', '--file', type=str, help="Input file with accession or
 parser.add_argument('-r', '--ref', choices=['txid', 'gbid'], help="If using --file option, specify accessions or taxon IDs.")
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
-
+parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
@@ -218,10 +218,11 @@ for rec in record:
             if name in v:
                 stdname = k
         if stdname == '':
-            continue
-        if stdname == "":
             unrec_genes.add(name)
             continue
+        if args.mito:
+            if stdname not in mito:
+                continue
         if stdname in cds:
             if 'codon_start' in feature.qualifiers:
                 frame = feature.qualifiers["codon_start"]
