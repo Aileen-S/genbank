@@ -8,15 +8,12 @@ parser.add_argument("-f", "--outfile", type=str, help="Output file")
 
 ins = []
 args = parser.parse_args()
-ingroup = SeqIO.parse(args.ingroup, "fasta")
-for i in ingroup:
-    ins.append(i.id)
+for taxon in SeqIO.parse(args.ingroup, "fasta"):
+    ins.append(taxon.id)
 
 outs = []
-args = parser.parse_args()
-outgroup = SeqIO.parse(args.outgroup, "fasta")
-for i in outgroup:
-    outs.append(i.id)
+for taxon in SeqIO.parse(args.outgroup, "fasta"):
+    outs.append(taxon.id)
 
 with open(args.outfile, 'w') as file:
-    file.write(f'(({",".join(outgroup)}),({",".join(ingroup)}));')
+    file.write(f'(({",".join(outs)}),({",".join(ins)}));')
