@@ -10,7 +10,9 @@ ins = []
 args = parser.parse_args()
 for taxon in SeqIO.parse(args.ingroup, "fasta"):
     ins.append(taxon.id)
-    fast.write(f'{taxon.id} 1\n')
+fast.write(f'{len(ins) + 2} 2\n')
+for id in ins:
+    fast.write(f'{id} 1\n')
 
 outs = []
 for taxon in SeqIO.parse(args.outgroup, "fasta"):
