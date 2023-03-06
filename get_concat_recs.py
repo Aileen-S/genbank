@@ -109,6 +109,7 @@ if args.ref == 'gbid':
     for line in lines:
         acc = line.strip()
         accs.append(acc)
+    print(f'{len(accs)} IDs found in {args.file}')
 
 else:
     if args.ref  == 'txid':
@@ -118,9 +119,9 @@ else:
         for line in lines:
             taxid = line.strip()
             taxids.append(taxid)
+        print(f'{len(taxids)} IDs found in {args.file}')
 
         # Generate search term to get all sequences in the search taxonomy
-        # - if -n option not used, then include "mitochondrial" in search term.
     if args.taxon:
         basesearch = f"(\"{args.taxon}\"[Organism] OR \"{args.taxon}\"[All Fields])"
 
@@ -159,6 +160,7 @@ else:
 # Search through GBIDs
 species = {}
 sequences = []
+nohits = []
 x = 0  # Count taxids
 accstr = ",".join(accs)                                           # Join into string for efetch
 handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")  # Get GenBanks
@@ -208,6 +210,7 @@ for rec in record:
             refs.append(ref.journal)
     else:
         continue
+    g = 0
     for feature in rec.features:
         type = feature.type
         if type not in ('CDS', 'rRNA'):
@@ -217,6 +220,7 @@ for rec in record:
         for k, v in genes.items():
             if name in v:
                 stdname = k
+                g += 1
         if stdname == '':
             unrec_genes.add(name)
             continue
@@ -260,10 +264,13 @@ for rec in record:
         else:
             species[txid] = {stdname: [output]}      # Otherwise add to dict with new key
             x += 1
-        #break
+    if g == 0:
+        nohits.append(rec.name)
 
-
-print(f"\n{x} gene records saved to species dict")
+print(f"\n{x} sequences found for requested genes")
+if args.file:
+    if len(nohits) > 0:
+        print(f'\nNo requested genes found in the following records: {nohits}')
 
 print("\nUnrecognised Genes")
 print(f'{unrec_genes}\n')
