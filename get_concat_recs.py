@@ -267,13 +267,9 @@ for rec in record:
     if g == 0:
         nohits.append(rec.name)
 
-print(f"\n{x} sequences found for requested genes")
-if args.file:
-    if len(nohits) > 0:
-        print(f'\nNo requested genes found in the following records: {nohits}')
+print(f"\n{x} sequences found for requested genes\n"
+      f"Saving longest sequence for each gene for each NCBI taxonomy ID")
 
-print("\nUnrecognised Genes")
-print(f'{unrec_genes}\n')
 #print("\nUnrecognised Species")
 #print(unrec_species)
 
@@ -384,5 +380,10 @@ for gene, records in longest.items():
 
 print("Metadata saved to metadata.csv")
 
+if args.file:
+    if len(nohits) > 0:
+        print(f'\nNo requested genes found in the following records: {nohits}')
 
+print("\nUnrecognised Genes")
+print(f'{unrec_genes}\n')
 
