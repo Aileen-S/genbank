@@ -185,8 +185,8 @@ for rec in record:
     spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
         .replace(')', '_').replace(';', '_').replace(':', '_').replace("'", "").replace(',', '')
     specfasta = spec.replace(" ", "_")
-    taxonomy = rec.annotations["taxonomy"][10:15]
-    taxonomy.extend([""] * (5 - len(taxonomy)))
+    taxonomy = rec.annotations["taxonomy"][10:16]
+    taxonomy.extend([""] * (6 - len(taxonomy)))
     if taxonomy[4] == "Cybistrini":
         taxonomy[3] = "Cybistrinae"
     fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
@@ -311,7 +311,7 @@ with open("metadata.csv", "w") as file:     # Open output file
     writer.writerow(
         ["Accession", "Taxon ID", 'BOLD', "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
+         "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
