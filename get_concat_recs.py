@@ -174,6 +174,12 @@ for rec in record:
     for ref in db_xref:
         if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
             txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
+            if "BOLD" in ref:
+                bold = (ref.split(":")[1]).split('.')[0]
+        try:
+            bold
+        except NameError:
+            bold = ''
     spec = rec.annotations["organism"]
     # Replace the following characters: > < . ( ) ; : ' ,
     spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
@@ -241,6 +247,7 @@ for rec in record:
         output = {"gene": stdname,
                   "gbid": rec.name,
                   "txid": txid,
+                  "bold": bold,
                   "description": rec.description,
                   "spec": rec.annotations["organism"],
                   "rec date": rec.annotations["date"],
@@ -302,7 +309,7 @@ for tax, stdname in species.items():
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
+        ["Accession", "Taxon ID", 'BOLD', "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
          '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
          "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
@@ -331,7 +338,7 @@ file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for gene, records in longest.items():
     for output in records:
-        row = [output["gbid"], output["txid"], output["spec"]]
+        row = [output["gbid"], output["txid"], output["bold"], output["spec"]]
         for g in gen:
             if g == output['gene']:
                 row.append(output['length'])
