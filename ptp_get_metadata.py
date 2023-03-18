@@ -58,8 +58,9 @@ def search_nuc(term, summaries=False, chunk=10000):
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Combine metadata from multiple genes")
+parser = argparse.ArgumentParser(description="Combine metadata from multiple genes. Choose either -f (input text file) or -m (input metadata file)")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
+parser.add_argument("-m", "--metadata", type=str, help="CSV metadata file with accessions in first column.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 
 args = parser.parse_args()
@@ -123,18 +124,29 @@ subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
 
 unrecgenes = set()
 sequencedict = {}
-file = open("metadata.csv", "a")
+file = open("metadataptp.csv", "a")
 writer = csv.writer(file)
 x = 0  # Count records added to species dict.
 
 # Get IDs from argparse input
 
 ids = []
-file = open(args.file)
-lines = file.readlines()
-for line in lines:
-    line.strip()
-    ids.append(line)
+
+if args.file:
+    file = open(args.file)
+    lines = file.readlines()
+    for line in lines:
+        line.strip()
+        ids.append(line)
+
+
+if args.metadata:
+    meta = open(args.metadata)
+    lines = meta.readlines()
+    for line in lines:
+        acc = line.split(',', 1)
+        ids.append(acc[0])
+
 id_str = ",".join(ids)
 
 
@@ -191,7 +203,7 @@ for rec in record:
             txids[txid][stdname] = len(seq)
 
 for txid, data in txids.items():
-    row = [",".join(data['gbids']), txid, data['species']]          # Start row of metadata for CSV
+    row = [",".join(set(data['gbids'])), txid, data['species']]          # Start row of metadata for CSV
 
 # Continue row of metadata csv
     for g in gen:

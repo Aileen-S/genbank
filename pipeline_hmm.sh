@@ -2,8 +2,10 @@
 #SBATCH --job-name=hmm_test
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=aileen.scott@nhm.ac.uk
-#SBATCH -p short
-#SBATCH --array=1-10
+#SBATCH --mem=10G
+#SBATCH --cpus-per-task=4
+#SBATCH --array=10
+
 
 # First get database to search, and profile to search with.
 # Save profile as taxon.profile.fasta
@@ -45,19 +47,41 @@ cd raw
 python3 ~/scratch/github/genbank/get_concat_recs.py -f ../$taxon.accessionlist.txt -r gbid -i both -e mixedupvoyage@gmail.com -m
 mv metadata.csv ..
 cd ..
+
+# Remove spaces
 for file in raw/*
 do
 sed -i 's/ /_/g' $file
 done
 
+
+cat << p
+
+----------------
+Write Constraint
+----------------
+p
+mkdir trees
+cd trees
+
+python3 ~/scratch/github/genbank/write_constraint.py -i ../raw/COX1.fasta -o ../outgroup*fasta
+#perl ~/scratch/github/fasttree_constraint.pl < raxml_constraint.txt > constraint_alignment.txt
+
+# Remove Frame Tage
+#sed -i -E "s/;frame=[0-9]*(;$)?//" raxml_constraint.txt
+sed -i -E "s/;frame=[0-9]*(;$)?//" fasttree_constraint.txt
+sed -i "s/;frame=[0-9]//g" raxml_constraint.txt
+
+cd ..
+
 cat << p
 
 ------------
-Add Outgorup
+Add Outgroup
 ------------
 p
-mv raw/COX1.fasta raw/COX1_without_outgroup.fasta
-cat raw/COX1_without_outgroup.fasta outgroup*fasta > raw/COX1.fasta
+mv raw/COX1.fasta COX1raw.fasta
+cat COX1raw.fasta outgroup*fasta > raw/COX1.fasta
 
 
 cat << p
@@ -122,14 +146,14 @@ cat << p
 Remove Frame Tags
 -----------------
 p
-cp -r aa_align aa_align_frametags
+#cp -r aa_align aa_align_frametags
 for file in aa_align/*
 do
    sed -i -E "s/;frame=[0-9]*(;$)?//" $file
 done
 echo "Frame tags removed from files in aa_align"
 
-cp -r nt_align nt_align_frametags
+#cp -r nt_align nt_align_frametags
 for file in nt_align/*
 do
    sed -i -E "s/;frame=[0-9]*(;$)?//" $file
@@ -138,11 +162,58 @@ echo "Frame tags removed from files in nt_align"
 
 cat << p
 
+---------------------------------------
+Build Supermatrices and Partition Files
+---------------------------------------
+p
+
+mkdir trees
+cd trees
+
+~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta aa_align/* > 1_aa_supermatrix.fasta 2> 1_aa_partitions.txt
+~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta nt_align/* > 2_nt_supermatrix.fasta 2> 2_nt_partitions.txt
+
+cat << p
+
+-----
+RAxML
+-----
+p
+
+# Get random number seed for RAxML and save to slurm output
+seed=$RANDOM
+echo 'RAxML random number seed = '$seed
+
+# Run RaxML
+raxml-ng --msa ../2_nt_supermatrix.fasta --model GTR+G --prefix $taxon --threads 2 --seed $seed --tree-constraint raxml_constraint.txt
+
+
+cat << p
+
 --------
 FastTree
 --------
 p
-FastTree -wag aa_align/COX1.fasta > $taxon.tree
+# Run FastTree
+FastTree -gtr -nt -constraints fasttree_constraint.txt < ../2_nt_supermatrix.fasta > $taxon.tree
+cd ..
+
+cat << p
+
+------------------------
+PTP Species Delimitation
+------------------------
+p
+mkdir ptp
+cd ptp
+
+seed=$RANDOM
+echo 'PTP random number seed = '$seed
+
+bPTP.py -t ../trees/$taxon.raxml.bestTree -o bPTP -s $seed
+
+cd ..
+
 
 cat << p
 
@@ -150,25 +221,29 @@ cat << p
 mPTP Species Delimitation
 -------------------------
 p
-# conda activate mptp?
 mkdir mptp
 cd mptp
 
-echo "Get minbr value"
+# Get outgroup
 outgroup=$(awk 'NR==1' ../outgroup*txt)
-# Get minbr value
-mptp --minbr_auto alignment --tree_file $taxon.tree --output_file minbr --outgroup $outgroup
 
-# Copy minbr value from minbr.txt
-minbr=$(awk 'NR==1' minbr)
+# Calculate minbr value
+echo "Getting minbr value"
+mptp --minbr_auto ../nt_align/COX1.fasta --tree_file ../trees/$taxon.raxml.bestTree --output_file minbr --outgroup $outgroup
 
-echo "Run mPTP"
+# Copy minbr value from slurm output
+minbr=$(awk 'END {print $NF}' ../../slurm*$SLURM_ARRAY_TASK_ID.out)
+echo "minbar value = " $minbr
+
 # Run PTP
-mptp --ml --multi --minbr $minbr --tree_file $taxon.tree --output_file mptp --outgroup $outgroup
+echo "
+Running mPTP"
+mptp --ml --multi --minbr  $minbr --tree_file ../trees/$taxon.raxml.bestTree --output_file mptp --outgroup $outgroup
 
-echo "Run MCMC"
 # Run MCMC sampling to determine statistical significance
-mptp --mcmc 1000000 --mcmc_sample 1000 --mcmc_log 1000 --mcmc_runs 2 --multi --minbr $minbr --tree_file ../fasttree/$taxon.tree --output_file MCMC
+echo "
+Running MCMC"
+mptp --mcmc 1000000 --mcmc_sample 1000 --mcmc_log 1000 --mcmc_runs 2 --multi --minbr $minbr --tree_file ../trees/$taxon.raxml.bestTree --output_file mcmc
 cd ..
 
 
