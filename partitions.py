@@ -2,10 +2,10 @@
 
 import argparse
 
-parser = argparse.ArgumentParser(description="Create partition files from IQTREE output")
-parser.add_argument("-i", "--input", type=str, help="in file")
+parser = argparse.ArgumentParser(description="Create partition files from catfasta output")
+parser.add_argument("-i", "--input", type=str, help="Catfasta partition file")
 parser.add_argument('-t', '--sequence_type', choices=['aa', 'nt'], help="Is input file from amino acid or nucleotide "
-                                                                        "supermatrix.")
+                                                                        "supermatrix?")
 parser.add_argument('-o', '--output', choices=['raxml', 'nexus'], help="Choose output file type")
 
 
