@@ -20,8 +20,17 @@ with open(args.names) as file:
 records = SeqIO.parse(args.input, "fasta")
 output = open(args.output, 'w')
 for rec in records:
-    for n in new:
-        if str(rec.id) in n:
-            rec.id = n
-    SeqIO.write(rec, output, 'fasta')
+    if ';frame=' in rec.id:
+        recid, frame = rec.id.split(';frame=')
+        for n in new:
+            if recid in n:
+                rec.id = f'{n};frame={frame}'
+        SeqIO.write(rec, output, 'fasta')
+        print(rec.id)
+    else:
+        for n in new:
+            if rec.id in n:
+                rec.id = n
+        print(rec.id)
+        SeqIO.write(rec, output, 'fasta')
 
