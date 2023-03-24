@@ -25,10 +25,10 @@ for rec in records:
         for n in new:
             if recid in n:
                 rec.id = f'{n};frame={frame}'
-        output.write(f'{rec.id}\n{rec.seq}\n')
+        output.write(f'>{rec.id}\n{rec.seq}\n')
     else:
         for n in new:
             if rec.id in n:
                 rec.id = n
-        output.write(f'{rec.id}\n{rec.seq}\n')
+        output.write(f'>{rec.id}\n{rec.seq}\n')
 
