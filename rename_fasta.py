@@ -20,7 +20,6 @@ with open(args.names) as file:
 records = SeqIO.parse(args.input, "fasta")
 output = open(args.output, 'w')
 for rec in records:
-    print(rec.id)
     if ';frame=' in rec.id:
         recid, frame = rec.id.split(';frame=')
         for n in new:
