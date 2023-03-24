@@ -26,11 +26,9 @@ for rec in records:
             if recid in n:
                 rec.id = f'{n};frame={frame}'
         SeqIO.write(rec, output, 'fasta')
-        print(rec.id)
     else:
         for n in new:
             if rec.id in n:
                 rec.id = n
-        print(rec.id)
         SeqIO.write(rec, output, 'fasta')
 
