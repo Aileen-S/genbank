@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser(description="Filter fasta file from list of IDs
 parser.add_argument("-i", "--input", type=str, help="Input fasta to be filtered")
 parser.add_argument("-o", "--output", type=str, help="Output file")
 parser.add_argument("-d", "--duds", action='store_true', help="Write separate fasta with records not found with filter")
-parser.add_argument("-do", "--dudsout", action='store_true', help="Output file for rejected sequences")
+parser.add_argument("-do", "--dudsout", type=str, help="Output file for rejected sequences")
 
 # Filter options
 parser.add_argument('-s', '--string', type=str, help='Single string to search for in sequence identifiers')
