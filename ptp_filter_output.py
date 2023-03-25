@@ -30,7 +30,7 @@ for line in lines:
         txids = []
         for name in line:
             if '~' in name:
-                chosen.write(f'{line[0]}\n')  # Write lab mito recs to file
+                chosen.write(f'{name}\n')  # Write lab mito recs to file
             else:
                 txid = name.split('_', 1)[0] # Get taxon IDs for multi taxon lines
                 txids.append(txid)
