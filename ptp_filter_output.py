@@ -18,9 +18,10 @@ chosen = open('chosen.txt', 'w')
 
 names = {}
 x = 0
-most = []
+most = set()
 lines = file.readlines()
 for line in lines:
+    print(line)
     line = line.strip()
     line = line.split(',')
     if len(line) == 1:
@@ -32,16 +33,18 @@ for line in lines:
             if '~' in name:
                 chosen.write(f'{name}\n')  # Write lab mito recs to file
             else:
+                print(name)
                 txid = name.split('_', 1)[0] # Get taxon IDs for multi taxon lines
                 txids.append(txid)
-                names[txid] = name          # Save fasta IDs
+                names[txid] = name          # Save full fasta IDs in dict with taxon ID as key
                 count = meta[txids[0]]      # Save number of genes from first record on line
                 top = txids[0]              # Save taxon ID from first record on line
             for txid in txids:
                 if meta[txid] > count:      # Replace count and taxon ID if another record has more genes
                     count = meta[txid]
                     top = txid
-            most.append(top)    # Save taxon ID with most genes
+            most.add(top)    # Save taxon ID with most genes
+            print(f'Most = {most}')
 
 for txid in most:
     chosen.write(f'{names[txid]}\n')    # Write fasta ID of longest
