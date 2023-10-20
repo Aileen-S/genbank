@@ -194,7 +194,7 @@ for rec in record:
     if "country" in rec.features[0].qualifiers:
         location = rec.features[0].qualifiers["country"][0]
         if ":" in location:
-            country, region = location.split(":")
+            country, region = location.split(":",1)
         else:
             country = location
             region = ""
