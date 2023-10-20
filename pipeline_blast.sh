@@ -7,14 +7,15 @@
 #SBATCH --array=1-4
 
 # Setup:
-# Save taxa in taxa.config config file
+# Save taxa and NCBI taxon IDs in taxa.config config file
 # Save search profile as profile.fasta
-# In directory named for each taxon as in config file:
-#   Save outgroup COX1 sequences as "outgroup.fasta"
-#   Save outgroup taxa names seperated by a comma
+# Make sub-directory named for each taxon from config file
+# Save outgroup fastas and metadata for each taxon in $taxon/outgroup
 
 # Get taxon names from config file
 taxon=$(awk -v ArrayTaskID=$SLURM_ARRAY_TASK_ID '$1==ArrayTaskID {print $2}' taxa.config)
+
+# Get NCBI taxon IDs from config file
 txid=$(awk -v ArrayTaskID=$SLURM_ARRAY_TASK_ID '$1==ArrayTaskID {print $3}' taxa.config)
 
 cd $taxon
@@ -30,12 +31,15 @@ p
 # Direct to BLAST database
 export BLASTDB=/mnt/shared/apps/databases/ncbi/
 
-# Get TXID list
+# Get species TXID list
 get_species_taxids.sh -t $txid > $taxon.txids
 
-# Search BLAST nucleotide database using profile, and limit search by txid. Output list of accessions.
+# Search BLAST nucleotide database using profile, and limit search using taxon ID list
+# Output list of accessions
 blastn -db nt -query ../profile.fasta -taxidlist $taxon.txids -out $taxon.blast -max_target_seqs 100000 -outfmt '6 sacc'
 
+# Remove duplicates from list of accessions
+sort -u $taxon.blast > $taxon.accs
 
 cat << p
 
@@ -43,37 +47,25 @@ cat << p
 Search GenBank for Accessions
 -----------------------------
 p
+
 mkdir 1_raw
 cd 1_raw
-python3 ~/scratch/github/genbank/get_concat_recs.py -f ../$taxon.blast -r gbid -i both -e aileen.scott@nhm.ac.uk -m
+
+# Use list of accessions to seach genbank
+# Find longest COI sequence for each taxon ID
+# Retrieve metadata and all available mitochondrial protein coding genes for these records
+python3 ~/scratch/github/genbank/get_concat_recs.py -f ../$taxon.accs -r gbid -i both -e aileen.scott@nhm.ac.uk -m
+
+# Move metadata to $taxon directory
 mv metadata.csv ..
 cd ..
 
-# Remove spaces
+# Replace spaces in species names
 for file in 1_raw/*
 do
 sed -i 's/ /_/g' $file
 done
 
-
-cat << p
-
-----------------
-Write Constraint
-----------------
-p
-mkdir trees
-cd trees
-
-python3 ~/scratch/github/genbank/write_constraint.py -i ../1_raw/COX1.fasta -o ../outgroup/COX1.fasta
-#perl ~/scratch/github/fasttree_constraint.pl < raxml_constraint.txt > constraint_alignment.txt
-
-# Remove Frame Tage
-#sed -i -E "s/;frame=[0-9]*(;$)?//" raxml_constraint.txt
-sed -i -E "s/;frame=[0-9]*(;$)?//" fasttree_constraint.txt
-sed -i "s/;frame=[0-9]//g" raxml_constraint.txt
-
-cd ..
 
 cat << p
 
@@ -193,7 +185,7 @@ python3 ~/scratch/github/genbank/partitions.py -i 2_nt_partitions.txt -t nt -o r
 cd ..
 
 
-# Change partitions to match a previous run (harder with codon model. Postpone!
+# Change partitions to match a previous run (harder with codon model. Postpone.
 
 sed -i -E "s/aa\///g" 1_aa_partitions.txt
 sed -i -E "s/nt\///g" 2_nt_partitions.txt
@@ -215,6 +207,7 @@ cd supermatrix
 python3 ~/scratch/github/genbank/partitions_raxml.py -i partitions_gene.nex
 cd ..
 
+mkdir trees
 cd trees
 
 # Get random number seed for RAxML and save to slurm output
