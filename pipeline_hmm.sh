@@ -4,37 +4,34 @@
 #SBATCH --mail-user=aileen.scott@nhm.ac.uk
 #SBATCH --mem=10G
 #SBATCH --cpus-per-task=4
-#SBATCH --array=10
+#SBATCH --array=1-4
 
 
 # First get database to search, and profile to search with.
 # Save profile as taxon.profile.fasta
 
 # In directory named for each taxon as in config file:
-# Save outgroup COX1 sequences as "outgroup.fasta"
-# Save outgroup taxa names seperated by a comma
+#   Save outgroup COX1 sequences as "outgroup.fasta"
+#   Save outgroup taxa names seperated by a comma
 
 # If using slurm, get taxon names from config file
-taxon=$(awk -v ArrayTaskID=$SLURM_ARRAY_TASK_ID '$1==ArrayTaskID {print $2}' adephaga.txt)
+taxon=$(awk -v ArrayTaskID=$SLURM_ARRAY_TASK_ID '$1==ArrayTaskID {print $2}' chosen.txt)
 
 cd $taxon
 
 cat << p
-
 ------------
-HMMER search
+HMMER Search
 ------------
 p
-# Add -A $taxonout.sth for sequence file output
-nhmmer --tformat fasta --tblout $taxon.hmmhits.txt ../../beetle_profile.hmm /home/ascott/voglerlab/barcodes/fastas/Adephaga/$taxon.fasta
+nhmmer --tblout $taxon.hmmhits ../profile.hmm /home/ascott/voglerlab/genbank/$taxon.gb
 
 cat << p
-
 ------------------------------
 Get list of GenBank Accessions
 ------------------------------
 p
-python3 ~/scratch/github/genbank/hmm_get_accessions.py -i $taxon.hmmhits.txt -o $taxon.accessionlist.txt
+python3 ~/scratch/github/genbank/hmm_get_accessions.py -i $taxon.hmmhits -o $taxon.accessionlist.txt
 
 cat << p
 
@@ -42,14 +39,14 @@ cat << p
 Search GenBank for Accessions
 -----------------------------
 p
-mkdir raw
-cd raw
+mkdir 1_raw
+cd 1_raw
 python3 ~/scratch/github/genbank/get_concat_recs.py -f ../$taxon.accessionlist.txt -r gbid -i both -e mixedupvoyage@gmail.com -m
 mv metadata.csv ..
 cd ..
 
 # Remove spaces
-for file in raw/*
+for file in 1_raw/*
 do
 sed -i 's/ /_/g' $file
 done
@@ -61,10 +58,13 @@ cat << p
 Write Constraint
 ----------------
 p
+
+# Constraint specifies outgroup for mPTP
+
 mkdir trees
 cd trees
 
-python3 ~/scratch/github/genbank/write_constraint.py -i ../raw/COX1.fasta -o ../outgroup*fasta
+python3 ~/scratch/github/genbank/write_constraint.py -i ../1_raw/COX1.fasta -o ../outgroup/COX1.fasta
 #perl ~/scratch/github/fasttree_constraint.pl < raxml_constraint.txt > constraint_alignment.txt
 
 # Remove Frame Tage
@@ -80,9 +80,11 @@ cat << p
 Add Outgroup
 ------------
 p
-mv raw/COX1.fasta COX1raw.fasta
-cat COX1raw.fasta outgroup*fasta > raw/COX1.fasta
-
+mkdir 2_merge
+for file in 1_raw/*
+do
+  cat $file outgroup/${file#*/} > 2_merge/${file#*/}
+done
 
 cat << p
 
@@ -90,11 +92,11 @@ cat << p
 Translate to Protein
 --------------------
 p
-mkdir aa
-for file in raw/*
+mkdir 3_aa
+for file in 2_merge/*
 do
   echo $file
-  ~/scratch/github/biotools/translate.py 5 < $file > aa/${file#*/}
+  ~/scratch/github/biotools/translate.py 5 < $file > 3_aa/${file#*/}
 done
 
 cat << p
@@ -103,11 +105,11 @@ cat << p
 Align to Profile
 ----------------
 p
-mkdir aa_align
-for file in aa/*
+mkdir 4_aa_align
+for file in 3_aa/*
 do
   echo $file
-  mafft --add $file --6merpair --maxiterate 1000 --anysymbol --thread 10 ~/scratch/profiles/0_AA_profiles/${file#*/} >  aa_align/${file#*/}
+  mafft --add $file --6merpair --maxiterate 1000 --anysymbol --thread 10 ~/scratch/profiles/0_AA_profiles/${file#*/} >  4_aa_align/${file#*/}
 done
 
 
@@ -117,7 +119,7 @@ cat << p
 Remove Profile
 --------------
 p
-cd aa_align
+cd 4_aa_align
 for file in *
 do
   echo $file
@@ -133,11 +135,11 @@ cat << p
 Translate to Nucleotide Alignment
 ---------------------------------
 p
-mkdir nt_align
-for file in aa_align/*
+mkdir 5_nt_align
+for file in 4_aa_align/*
 do
   echo $file
-  ~/scratch/github/biotools/backtranslate.py -i $file raw/${file#*/} 5 > nt_align/${file#*/}
+  ~/scratch/github/biotools/backtranslate.py -i $file 2_merge/${file#*/} 5 > 5_nt_align/${file#*/}
 done
 
 cat << p
@@ -146,19 +148,19 @@ cat << p
 Remove Frame Tags
 -----------------
 p
-#cp -r aa_align aa_align_frametags
-for file in aa_align/*
+#cp -r 4_aa_align aa_align_frametags
+for file in 4_aa_align/*
 do
    sed -i -E "s/;frame=[0-9]*(;$)?//" $file
 done
-echo "Frame tags removed from files in aa_align"
+echo "Frame tags removed from files in 4_aa_align"
 
-#cp -r nt_align nt_align_frametags
-for file in nt_align/*
+#cp -r 5_nt_align nt_align_frametags
+for file in 5_nt_align/*
 do
    sed -i -E "s/;frame=[0-9]*(;$)?//" $file
 done
-echo "Frame tags removed from files in nt_align"
+echo "Frame tags removed from files in 5_nt_align"
 
 cat << p
 
@@ -167,11 +169,39 @@ Build Supermatrices and Partition Files
 ---------------------------------------
 p
 
-mkdir trees
-cd trees
+mkdir supermatrix
+mkdir supermatrix/aa
+mkdir supermatrix/nt
 
-~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta aa_align/* > 1_aa_supermatrix.fasta 2> 1_aa_partitions.txt
-~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta nt_align/* > 2_nt_supermatrix.fasta 2> 2_nt_partitions.txt
+for file in 4_aa_align/*
+do
+  python3 ~/scratch/github/genbank/fasta_remove_gbids.py -i $file -o supermatrix/aa/${file#*/}
+done
+
+for file in 5_nt_align/*
+do
+  python3 ~/scratch/github/genbank/fasta_remove_gbids.py -i $file -o supermatrix/nt/${file#*/}
+done
+
+cd supermatrix
+~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta aa/* > 1_aa_supermatrix.fasta 2> 1_aa_partitions.txt
+~/scratch/github/catfasta2phyml/catfasta2phyml.pl -c -fasta nt/* > 2_nt_supermatrix.fasta 2> 2_nt_partitions.txt
+
+python3 ~/scratch/github/genbank/partitions.py -i 1_aa_partitions.txt -t aa -o raxml
+python3 ~/scratch/github/genbank/partitions.py -i 2_nt_partitions.txt -t nt -o raxml
+cd ..
+
+
+# Change partitions to match a previous run (harder with codon model. Postpone!
+
+sed -i -E "s/aa\///g" 1_aa_partitions.txt
+sed -i -E "s/nt\///g" 2_nt_partitions.txt
+sed -i -E "s/.fasta//g" *_partitions.txt
+sed -i -E "s/.fasta//g" ../iqtree/*.best_scheme.nex
+
+~/scratch/github/phylostuff/partitioner.py -p ../iqtree/nttree_MF.best_scheme.nex < 2_nt_partitions.txt > partitions_gene.nex
+~/scratch/github/phylostuff/partitioner.py -p ../iqtree/aa_MF.best_scheme.nex < 1_aa_partitions.txt > partitions_aa.nex
+
 
 cat << p
 
@@ -180,12 +210,18 @@ RAxML
 -----
 p
 
+cd supermatrix
+python3 ~/scratch/github/genbank/partitions_raxml.py -i partitions_gene.nex
+cd ..
+
+cd trees
+
 # Get random number seed for RAxML and save to slurm output
 seed=$RANDOM
 echo 'RAxML random number seed = '$seed
 
 # Run RaxML
-raxml-ng --msa ../2_nt_supermatrix.fasta --model GTR+G --prefix $taxon --threads 2 --seed $seed --tree-constraint raxml_constraint.txt
+raxml-ng --msa ../supermatrix/2_nt_multi.fasta --model ../supermatrix/partitions_gene.nex.raxml --prefix $taxon --threads 2 --seed $seed #--tree-constraint raxml_constraint.txt
 
 
 cat << p
@@ -195,7 +231,7 @@ FastTree
 --------
 p
 # Run FastTree
-FastTree -gtr -nt -constraints fasttree_constraint.txt < ../2_nt_supermatrix.fasta > $taxon.tree
+FastTree -gtr -nt -constraints fasttree_constraint.txt < ../supermatrix/2_nt_supermatrix.fasta > $taxon.tree
 cd ..
 
 cat << p
@@ -210,7 +246,7 @@ cd ptp
 seed=$RANDOM
 echo 'PTP random number seed = '$seed
 
-bPTP.py -t ../trees/$taxon.raxml.bestTree -o bPTP -s $seed
+bPTP.py -t ../trees/$taxon.tree -o bPTP -s $seed
 
 cd ..
 
@@ -225,11 +261,11 @@ mkdir mptp
 cd mptp
 
 # Get outgroup
-outgroup=$(awk 'NR==1' ../outgroup*txt)
+outgroup=$(awk 'NR==1' ../outgroup.txt)
 
 # Calculate minbr value
 echo "Getting minbr value"
-mptp --minbr_auto ../nt_align/COX1.fasta --tree_file ../trees/$taxon.raxml.bestTree --output_file minbr --outgroup $outgroup
+mptp --minbr_auto ../5_nt_align/COX1.fasta --tree_file ../trees/$taxon.raxml.bestTree --output_file minbr --outgroup $outgroup
 
 # Copy minbr value from slurm output
 minbr=$(awk 'END {print $NF}' ../../slurm*$SLURM_ARRAY_TASK_ID.out)
