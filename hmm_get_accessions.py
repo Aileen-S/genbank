@@ -14,7 +14,7 @@ with open(args.input) as infile:
     for line in lines:
         if '#' in line:
             continue
-        line = line.split('.', 1)
+        line = line.split(' ')
         output.write(f'{line[0]}\n')
         x += 1
 print(f'{x} accessions saved to {args.output}')
