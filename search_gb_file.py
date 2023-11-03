@@ -34,7 +34,8 @@ def set_feat_name(feat, name):
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
-parser.add_argument('-f', '--file', type=str, help="Input genbank format file")
+parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
+parser.add_argument('-a', '--accs', type=str, help="Input file with list of accession numbers")
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 
@@ -74,6 +75,15 @@ cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4
 unrec_genes = set()
 unrec_species = []
 
+if args.accs:
+    accs = []
+    file = open(args.accs)
+    lines = file.readlines()
+    for line in lines:
+        acc = line.strip()
+        accs.append(acc)
+    print(f'{len(accs)} IDs found in {args.accs}')
+
 # Search through GBIDs
 species = {}
 sequences = []
@@ -81,9 +91,12 @@ nohits = []
 other_type = set()
 misc_feature = set()
 x = 0  # Count taxids
-with open(args.file) as file:
+with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
+        if args.accs:
+            if rec.name not in accs:
+                continue
         if args.taxon:
             if args.taxon not in rec.annotations["taxonomy"]:
                 unrec_species.append(rec.name)
@@ -308,7 +321,7 @@ for gene, records in longest.items():
 
 print("Metadata saved to metadata.csv")
 
-if args.file:
+if args.accs:
     if len(nohits) > 0:
         print(f'\nNo requested genes found in the following records: {nohits}')
 
