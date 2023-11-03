@@ -101,7 +101,10 @@ with open(args.gb_file) as file:
             if args.taxon not in rec.annotations["taxonomy"]:
                 unrec_species.append(rec.name)
                 continue
-        db_xref = rec.features[0].qualifiers["db_xref"]
+        try:
+            db_xref = rec.features[0].qualifiers["db_xref"]
+        except KeyError:
+            continue
         for ref in db_xref:
             if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
                 txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
