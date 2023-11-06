@@ -31,4 +31,4 @@ with open('raxml_constraint.txt', 'w') as rax:
 
 with open('outgroup.txt', 'w') as file:
     for o in outs:
-        file.write(f'{o}\n')
+        file.write(f'{o},')
