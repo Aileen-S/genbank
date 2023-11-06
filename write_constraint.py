@@ -14,7 +14,7 @@ for file in ingroup:
         #fast.write(f'>{taxon.id}\n1\n')
 
 outs = []
-outgroup = args.output.split(',')
+outgroup = args.outgroup.split(',')
 for file in outgroup:
     for taxon in SeqIO.parse(file, "fasta"):
         outs.append(taxon.id)
@@ -29,5 +29,6 @@ with open('fasttree_constraint.txt', 'w') as fast:
 with open('raxml_constraint.txt', 'w') as rax:
     rax.write(f'(({",".join(outs)}),({",".join(ins)}));')
 
-
-
+with open('outgroup.txt', 'w') as file:
+    for o in outs:
+        file.write(f'{o}\n')
