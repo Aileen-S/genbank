@@ -30,5 +30,4 @@ with open('raxml_constraint.txt', 'w') as rax:
     rax.write(f'(({",".join(outs)}),({",".join(ins)}));')
 
 with open('outgroup.txt', 'w') as file:
-    for o in outs:
-        file.write(f'{o},')
+    file.write(','.join(outs))
