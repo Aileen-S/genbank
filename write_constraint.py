@@ -22,9 +22,9 @@ for file in outgroup:
 
 with open('fasttree_constraint.txt', 'w') as fast:
     for i in ins:
-        fast.write(f'{i}\n1\n')
+        fast.write(f'>{i}\n1\n')
     for o in outs:
-        fast.write(f'{o}\n0\n')
+        fast.write(f'>{o}\n0\n')
 
 with open('raxml_constraint.txt', 'w') as rax:
     rax.write(f'(({",".join(outs)}),({",".join(ins)}));')
