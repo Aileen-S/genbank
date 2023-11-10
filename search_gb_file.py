@@ -71,9 +71,13 @@ nuc = ['AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 rna = ['12S', '16S', '18S', '28S']
 cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 
+misc = ["similar to cytochrome oxidase subunit I", "similar to cytochrome oxidase subunit 1", "similar to cytochrome c oxidase subunit I; COI", "similar to cytochrome c oxidase subunit I", "sequence contains partial cox1, tRNA-Leu and partial cox2 genes", "cox1", "coding region not determined; cytochrome oxidase subunit I", "similar to cytochrome oxidase subunit I; COI", "similar to cytochrome c oxidase", "similar to cytochrome oxidase subunit 1; 3' barcoding region; LCO-HCO"]
+
 
 unrec_genes = set()
 unrec_species = []
+misc_ids = []
+misc_sequences = []
 
 if args.accs:
     accs = []
@@ -121,8 +125,6 @@ with open(args.gb_file) as file:
         specfasta = spec.replace(" ", "_")
         taxonomy = rec.annotations["taxonomy"][10:16]
         taxonomy.extend([""] * (6 - len(taxonomy)))
-        if taxonomy[4] == "Cybistrini":
-            taxonomy[3] = "Cybistrinae"
         fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
 
         if "country" in rec.features[0].qualifiers:
@@ -156,31 +158,38 @@ with open(args.gb_file) as file:
             type = feature.type
             if type not in ('CDS', 'rRNA'):
                 if type == 'misc_feature':
-                    if 'note' in feature.qualifiers:
-                        misc_feature.add(tuple(feature.qualifiers['note']))
+                    try:
+                        if feature.qualifiers['note'][0] in misc:
+                            seq = feature.extract(rec.seq)
+                            misc_ids.append(rec.name)
+                            stdname = 'misc'
+                            frame = ''
+                    except KeyError:
+                        continue
                 else:
                     other_type.add(type)
-                continue
-            name = get_feat_name(feature)                       # Find gene name
-            stdname = ""
-            for k, v in genes.items():
-                if name in v:
-                    stdname = k
-                    g += 1
-            if stdname == '':
-                unrec_genes.add(name)
-                continue
-            if args.mito:
-                if stdname not in mito:
                     continue
-            if stdname in cds:
-                if 'codon_start' in feature.qualifiers:
-                    frame = feature.qualifiers["codon_start"]
+            else:
+                name = get_feat_name(feature)                       # Find gene name
+                stdname = ""
+                for k, v in genes.items():
+                    if name in v:
+                        stdname = k
+                        g += 1
+                if stdname == '':
+                    unrec_genes.add(name)
+                    continue
+                if args.mito:
+                    if stdname not in mito:
+                        continue
+                if stdname in cds:
+                    if 'codon_start' in feature.qualifiers:
+                        frame = feature.qualifiers["codon_start"]
+                    else:
+                        frame = ''
+                        print(f"Reading frame missing from record {rec.name}, {stdname}.")
                 else:
                     frame = ''
-                    print(f"Reading frame missing from record {rec.name}, {stdname}.")
-            else:
-                frame = ''
             seq = feature.extract(rec.seq)
             sequences.append(seq)
             output = {"gene": stdname,
@@ -201,16 +210,19 @@ with open(args.gb_file) as file:
                       "region": region,
                       "latlon": latlon,
                       "refs": refs}
-            if txid in species:                              # If taxon ID in dict
-                if stdname in species[txid]:                 # If gene in dict for that taxon ID
-                    species[txid][stdname].append(output)    # Add gene info list to dict
-                    x += 1
-                else:
-                    species[txid][stdname] = [output]      # Otherwise add to dict with new key
-                    x += 1
+            if rec.name in misc_ids:
+                misc_sequences.append(output)
             else:
-                species[txid] = {stdname: [output]}      # Otherwise add to dict with new key
-                x += 1
+                if txid in species:                              # If taxon ID in dict
+                    if stdname in species[txid]:                 # If gene in dict for that taxon ID
+                        species[txid][stdname].append(output)    # Add gene info list to dict
+                        x += 1
+                    else:
+                        species[txid][stdname] = [output]      # Otherwise add to dict with new key
+                        x += 1
+                else:
+                    species[txid] = {stdname: [output]}      # Otherwise add to dict with new key
+                    x += 1
         if g == 0:
             nohits.append(rec.name)
 
@@ -245,36 +257,25 @@ for tax, stdname in species.items():
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", 'BOLD', "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
-         '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+        ["Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
          "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
          "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+    #writer.writerow(
+        #["Accession", "Taxon ID", 'BOLD', "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
+        # '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+        # "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
+        # "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
+        # "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'ATP6', 'ATP8',
-       'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
-
-
-subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
-            'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes', 'Leuronectes'],
-            'Cybister': ['Megadytoides', 'Melanectes', 'Neocybister'],
-            'Megadytes': ['Bifurcitus', 'Paramegadytes', 'Trifurcitus'],
-            'Acilus': ['Homoeolytrus'],
-            'Hydaticus': ['Prodaticus'],
-            'Clypeodytes': ['Hypoclypeus', 'Paraclypeus'],
-            'Clemnius': ['Cyclopius'],
-            'Hygrotus': ['Coelambus', 'Heroceras', 'Herophydrus', 'Hyphoporus', 'Leptolambus'],
-            'Rhantus': ['Anisomera', 'Senilites'],
-            'Aglymbus': ['Rugosus'],
-            'Exocelina': ['Papuadytes'],
-            'Paroster': ['Terradessus']}
+gen = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
 
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for gene, records in longest.items():
     for output in records:
-        row = [output["gbid"], output["txid"], output["bold"], output["spec"]]
+        row = [output["gbid"], output["txid"], output["bold"], output["spec"], '']
         for g in gen:
             if g == output['gene']:
                 row.append(output['length'])
@@ -285,9 +286,6 @@ for gene, records in longest.items():
         row.extend(output["taxonomy"])
         gen_spec = output['spec'].split(' ')
         genus = gen_spec[0]
-        for k, v in subgenus.items():
-            if genus in v:
-                genus = k
         row.append(genus)
         row.append(output["description"])
         row.append(output["rec date"])
@@ -298,6 +296,21 @@ for gene, records in longest.items():
         row.extend(output["refs"])
         writer.writerow(row)
 
+for output in misc_sequences:
+    row = [output["gbid"], output["txid"], output["bold"], output["spec"], 'yes']
+    row.extend(['', '', output['length'], '', '', '', '', '', '', '', '', '', ''])
+    row.extend(output["taxonomy"])
+    gen_spec = output['spec'].split(' ')
+    genus = gen_spec[0]
+    row.append(genus)
+    row.append(output["description"])
+    row.append(output["rec date"])
+    row.append(output["c date"])
+    row.append(output["country"])
+    row.append(output["region"])
+    row.append(output["latlon"])
+    row.extend(output["refs"])
+    writer.writerow(row)
 
 
 for gene, records in longest.items():
@@ -320,6 +333,22 @@ for gene, records in longest.items():
             file.write(f">{f_id}_{rec['fastatax']}\n{rec['seq']}\n")
             x += 1
     print(f'{x} records written to {gene}.fasta')
+
+file = open('misc.fasta', 'w')
+x = 0
+for misc in misc_sequences:
+    if args.fasta_id:
+        if args.fasta_id == 'txid':
+            f_id = misc['txid']
+        if args.fasta_id == 'both':
+            f_id = f"{misc['txid']}_{misc['gbid']}"
+        else:
+            f_id = misc['gbid']
+    else:
+        f_id = misc['gbid']
+    file.write(f">{f_id}_{misc['fastatax']}\n{misc['seq']}\n")
+    x += 1
+print(f'{x} records written to misc.fasta')
 
 
 print("Metadata saved to metadata.csv")
