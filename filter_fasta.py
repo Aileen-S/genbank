@@ -44,7 +44,7 @@ elif args.hmmer:
                 continue
             line = line.split(' ')
             wanted.append(line[0])
-            print(f"Found {len(wanted)} unique identifiers in {args.hmmer}")
+    print(f"Found {len(wanted)} unique identifiers in {args.hmmer}")
 
 
 
@@ -52,6 +52,7 @@ else:
     with open(args.filter) as infile:
         wanted = set(line.rstrip("\n") for line in infile)
         print(f"Found {len(wanted)} unique identifiers in {args.filter}")
+
 print(f"Searching {args.input}")
 
 records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
@@ -64,7 +65,7 @@ print(f"Saved {count} records from {args.input} to {args.output}")
 if args.duds:
     records = (r for r in SeqIO.parse(args.input, "fasta") if r.id not in wanted)
     count = SeqIO.write(records, args.dudsout, "fasta")
-    print(f"Saved {count} records from {args.input} to {args.duds}")
+    print(f"Saved {count} records from {args.input} to {args.dudsout}")
 
 
 
