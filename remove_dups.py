@@ -33,9 +33,10 @@ records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in seq_ids)
 count = SeqIO.write(records, args.output, "fasta")
 print(f"Saved {count} records from {args.input} to {args.output}")
 
-dups = (r for r in SeqIO.parse(args.input, "fasta") if r.id in dup_ids)
-count = SeqIO.write(dups, args.dups, "fasta")
-print(f"{count} duplicate records removed and saved to {args.dups}")
+if args.dups:
+    dups = (r for r in SeqIO.parse(args.input, "fasta") if r.id in dup_ids)
+    count = SeqIO.write(dups, args.dups, "fasta")
+    print(f"{count} duplicate records removed and saved to {args.dups}")
 
 
 
