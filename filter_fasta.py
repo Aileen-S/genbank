@@ -38,7 +38,7 @@ print(f"Searching {args.input}")
 
 records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
 count = SeqIO.write(records, args.found, "fasta")
-print(f"Saved {count} records from {args.search} to {args.found}")
+print(f"Saved {count} records from {args.input} to {args.found}")
 
 if count < len(wanted):
     print(f"{len(wanted) - count} IDs from {args.search} not found in {args.input}")
