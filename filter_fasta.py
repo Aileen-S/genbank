@@ -25,7 +25,7 @@ with open(args.search) as infile:
         for rec in recs:
             wanted.append(rec.id)
 
-    elif args.rype == 'hmmer':
+    elif args.type == 'hmmer':
         lines = infile.readlines()
         for line in lines:
             if '#' in line:
@@ -38,10 +38,10 @@ print(f"Searching {args.input}")
 
 records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
 count = SeqIO.write(records, args.found, "fasta")
+print(f"Saved {count} records from {args.search} to {args.found}")
 
 if count < len(wanted):
     print(f"{len(wanted) - count} IDs from {args.search} not found in {args.input}")
-print(f"Saved {count} records from {args.search} to {args.found}")
 
 if args.notfound:
     records = (r for r in SeqIO.parse(args.input, "fasta") if r.id not in wanted)
