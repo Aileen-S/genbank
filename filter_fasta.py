@@ -36,16 +36,16 @@ print(f"Found {len(wanted)} unique identifiers in {args.search}")
 
 print(f"Searching {args.input}")
 
-records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
-count = SeqIO.write(records, args.found, "fasta")
-print(f"Saved {count} records from {args.input} to {args.found}")
-
-if count < len(wanted):
-    print(f"{len(wanted) - count} IDs from {args.search} not found in {args.input}")
+if args.found:
+    records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
+    count = SeqIO.write(records, args.found, "fasta")
+    print(f"{count} of {len(wanted)} records from {args.search} found in {args.input}")
+    print(f"Saved {count} records from {args.input} to {args.found}")
 
 if args.notfound:
     records = (r for r in SeqIO.parse(args.input, "fasta") if r.id not in wanted)
     count = SeqIO.write(records, args.notfound, "fasta")
+    print(f"{count} records from {args.input} not present in {args.search}")
     print(f"Saved {count} records from {args.input} to {args.notfound}")
 
 
