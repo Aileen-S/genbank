@@ -34,7 +34,8 @@ with open(args.search) as infile:
             wanted.append(line[0])
 print(f"Found {len(wanted)} unique identifiers in {args.search}")
 
-print(f"Searching {args.input}")
+records = list(SeqIO.parse(args.input, "fasta"))
+print(f'{len(records)} records in {args.input}')
 
 if args.found:
     records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in wanted)
