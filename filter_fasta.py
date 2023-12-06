@@ -44,10 +44,14 @@ if args.partial:
         found = open(args.found, 'w')
         found = open(args.found, 'a')
         records = SeqIO.parse(args.input, "fasta")
+        x = 0
         for rec in records:
             for w in wanted:
                 if w in rec.id:
                     found.write(f'>{rec.id}\n{rec.seq}\n')
+                    x += 1
+        print(f"{x} of {len(wanted)} records from {args.search} found in {args.input}")
+        print(f"{x} records from {args.input} saved to {args.found}")
     # Need to add notfound output option
 
 else:
