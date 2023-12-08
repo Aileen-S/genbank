@@ -67,4 +67,4 @@ else:
         print(f"{count} records from {args.input} not present in {args.search}")
         print(f"{count} records from {args.input} saved to {args.notfound}")
 
-
+print('\n')
