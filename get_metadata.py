@@ -67,9 +67,7 @@ class MultilineFormatter(argparse.HelpFormatter):
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Fetch metadata from specified GenBank accession/ID numbers. "
-                                             "Input refs either in command with -r flag, or listed in text file using "
-                                             "-f flag.", formatter_class=MultilineFormatter)
+parser = argparse.ArgumentParser(description="Fetch metadata from specified GenBank accession/ID numbers")
 parser.add_argument("-l", "--list", type=str, help="GenBank ID/accession number(s). For multiple records, format is ref1,ref2,ref3.")
 parser.add_argument("-f", "--file", type=str, help="Text file containing list of GenBank ID/accession refs, with one ref per line.")
 parser.add_argument("-x", "--txid", action="store_true", help="Specify if input refs are NCBI taxon IDs.")
@@ -80,9 +78,7 @@ args = parser.parse_args()
 #args = argparse.Namespace(file="test.txt", email='aileen.scott@nhm.ac.uk') # This is how I step through the script interactively
 Entrez.email = args.email
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
-         "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
+genes = {"ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
          "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1'],
          "COX2": ['CYTOCHROME C OXIDASE SUBUNIT 2', 'CYTOCHROME OXIDASE SUBUNIT II', 'CYTOCHROME C OXIDASE SUBUNIT II', 'COXII', 'CO2', 'COII', 'CYTOCHROME COXIDASE SUBUNIT II', 'CYTOCHROME OXIDASE SUBUNIT 2', 'CYTOCHROME OXYDASE SUBUNIT 2', 'COX2'],
@@ -94,15 +90,7 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", 'RRNS'],
          "ND4": ['NAD4', 'NSD4', 'NADH4', 'NADH DEHYDROGENASE SUBUNIT IV', 'NADH DEHYDROGENASE SUBUNIT 4', 'NADH DESHYDROGENASE SUBUNIT 4', 'NAD4-0', 'ND4'],
          "ND4L": ['NAD4L', 'NSD4L', 'NADH4L', 'NADH DEHYDROGENASE SUBUNIT IVL', 'NADH DEHYDROGENASE SUBUNIT 4L', 'NADH DESHYDROGENASE SUBUNIT 4L', 'NAD4L-0', 'ND4L'],
          "ND5": ['NAD5', 'NSD5', 'NADH5', 'NADH DEHYDROGENASE SUBUNIT V', 'NADH DEHYDROGENASE SUBUNIT 5', 'NADH DESHYDROGENASE SUBUNIT 5', 'NAD5-0', 'ND5'],
-         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6'],
-         "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
-         "28S": ["28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA", 'LARGE SUBUNIT RIBOSOMAL RNA'],
-         "AK": ["AK", "ARGININE KINASE", "ARGK", "ARGKIN", "ARGS", "ARK"],
-         "CAD": ["CAD", "CAD FRAGMENT 1", "CARBAMOYLPHOSPHATE SYNTHETASE"],
-         "EF1A": ["EF1-ALPHA", "EF1A", "ELONGATION FACTOR 1 ALPHA", "ELONGATION FACTOR 1-ALPHA"],
-         "H3": ["H3", "HISTONE 3", "HISTONE H3", "HIS3"],
-         "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
-         "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
+         "ND6": ['NAD6', 'NSD6', 'NADH6', 'NADH DEHYDROGENASE SUBUNIT VI', 'NADH DEHYDROGENASE SUBUNIT 6', 'NADH DESHYDROGENASE SUBUNIT 6', 'NAD6-0', 'ND6'],}
 
 # Gene name variants dict
 regions = {'Nearctic':
@@ -138,18 +126,22 @@ regions = {'Nearctic':
 
 Ambiguous = ['Mexico', 'Angola', 'Mozambique', 'Namibia', 'Algeria', 'Botswana', 'Chad', 'Democratic Republic of the Congo', 'Egypt', 'Liyba', 'Mauritania', 'Niger', 'Nigeria', 'Mali', 'Afghanistan', 'China', 'Saudi Arabia', 'Russia', 'Canada', 'USA', 'Mexico', 'Papua New Guinea', 'Argentina', 'Bolivia', 'Brazil', 'Chile', 'Peru']
 
+suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
+
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "BOLD ID", "Taxon ID", "Description", 'Genes',
-         "Domain", "Kingdom", "Superphylum", "Phylum", "Subphylum", "Class", "Subclass", "Infraclass", "Superorder",
-         "Order", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Species", "Date Late Modified",
-         "Date Collected", '', 'Region', 'Subregion', "Country", "Locality", "Lat/Long", 'Latitude', 'Longitude', "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
-         "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+        ["FastaID", "Accession", "Taxon ID", 'BOLD', "Species", "Count", 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
+         "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
+         "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
 gen = ['18S', '28S', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg', '12S', '16S', 'ATP6', 'ATP8',
        'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+
+mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+
 
 subgenus = {'Agabus': ['Acatodes', 'Gaurodytes'],
             'Platynectes': ['Agametrus', 'Australonectes', 'Gueorguievtes', 'Leuronectes'],
@@ -212,7 +204,20 @@ sequences = []
 for rec in record:
     x += 1
     spec = rec.annotations["organism"]
-    taxonomy = rec.annotations["taxonomy"][0:15]
+    # Replace the following characters: > < . ( ) ; : ' ,
+    spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
+        .replace(')', '_').replace(';', '_').replace(':', '_').replace("'", "").replace(',', '')
+    specfasta = spec.replace(" ", "_")
+    taxonomy = ['', '', '', '', '']
+    for tax in rec.annotations["taxonomy"]:
+        if tax in suborders: taxonomy[0] = tax
+        if tax.endswith('oidea'): taxonomy[1] = tax
+        if tax.endswith('idae'): taxonomy[2] = tax
+        if tax.endswith('inae'): taxonomy[3] = tax
+        if tax.endswith('ini'): taxonomy[4] = tax
+    taxonomy.append(spec.split(' ')[0])
+    fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+
     db_xref = rec.features[0].qualifiers["db_xref"]
     txid = ''
     bold = ''
@@ -233,7 +238,7 @@ for rec in record:
             bold = ref[5:]
             if '.' in bold:
                 bold,g = bold.split('.')
-    gbid = rec.name
+    gbid = rec.name.replace('_', '-')
     if "country" in rec.features[0].qualifiers:
         location = rec.features[0].qualifiers["country"][0]
         if ":" in location:
@@ -265,30 +270,31 @@ for rec in record:
         refs.append(ref.authors)
         refs.append(ref.title)
         refs.append(ref.journal)
-    row = [gbid, bold, txid, rec.description]          # Start row of metadata for CSV
+    row = [f'{txid}_{fastatax}', gbid, txid, bold, spec]          # Start row of metadata for CSV
 
     genelist = []
-    for feature in rec.features:
-        type = feature.type
-        if type not in ('CDS', 'rRNA', 'mRNA'):
-            continue  # skip to next feature
-        name = get_feat_name(feature)
-        for k, v in genes.items():
-            if name in v:
-                name = k
-        genelist.append(name)
+    count = 0
+    for m in mito:
+        n = ''
+        for feature in rec.features:
+            type = feature.type
+            if type not in ('CDS', 'rRNA', 'mRNA'):
+                continue  # skip to next feature
+            name = get_feat_name(feature)
+            if name in genes[m]:
+                count += 1
+                n = len(feature.extract(rec.seq))
+        genelist.append(n)
     # Continue row of metadata csv
-    row.append(genelist)
-    taxonomy.extend([""] * (15 - len(taxonomy)))
-    if taxonomy[14] == "Cybistrini":
-        taxonomy[13] = "Cybistrinae"
+    row.append(count)
+    row.extend(genelist)
     row.extend(taxonomy)
     gen_spec = spec.split(' ')
     genus = gen_spec[0]
     for k, v in subgenus.items():
         if genus in v:
             genus = k
-    row2 = [genus, spec, rec.annotations["date"], c_date, ambi, reg,subreg, country, locality, latlon, lat, long]
+    row2 = [genus, rec.description, rec.annotations["date"], c_date, country, locality, latlon, lat, long]
     row2.extend(refs)
     row = row + row2
     writer.writerow(row)
