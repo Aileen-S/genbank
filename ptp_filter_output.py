@@ -45,7 +45,7 @@ for species in species_lists:
             if s in count:
                 if count[s] > 0:
                     spec = s
-        most.append(spec)
+    most.append(spec)
 
 output = open(args.output, 'w')
 for m in most:
