@@ -9,8 +9,10 @@ parser = argparse.ArgumentParser(description="Search GenBank, retrieve gene sequ
 parser.add_argument('-i', '--input', type=str, help="Input genbank")
 parser.add_argument('-t', '--taxonomy', type=str, help="Taxon to extract")
 parser.add_argument('-o', '--output', type=str, help='Output genbank')
-
 args = parser.parse_args()         # Process input args from command line
+
+records = SeqIO.parse(args.input, "gb")
+print(f'{len(list(records))} records in {args.input}')
 
 output = open(args.output, 'w')
 records = (r for r in SeqIO.parse(args.input, "gb") if args.taxonomy in r.annotations["taxonomy"])
