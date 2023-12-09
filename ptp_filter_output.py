@@ -1,54 +1,54 @@
 import csv
+import argparse
 
-meta = {}
-with open('metadataptp.csv') as file:  # output from ptp_get_metadata.py
+# Argument parser
+parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
+parser.add_argument("-i", "--input", type=str, help="mPTP output txt file")
+parser.add_argument("-m", "--meta", type=str, help="metadata file")
+parser.add_argument("-o", "--output", type=str, help="output file with filtered fasta IDs")
+
+args = parser.parse_args()
+
+# Save gene count for each taxon in dict
+count = {}
+with open(args.meta) as file:
     metadata = csv.reader(file)
     for row in metadata:
-        count = 0
-        for r in row[3:20]:
-            if r != '':
-                count += 1
-        meta[row[1]] = count    # Save count of genes for each taxon ID
+        count[row[0]]: row[5]
+print(count)
 
-#lab = ['50515', '50516', '107801', '107841', '107843', '107861', '107887']
-#found = []
+file = open(args.input)
 
-file = open('output.txt')     # output from [grep "^ " bPTP_221219.PTPhSupportPartition.txt > output.txt]
-chosen = open('chosen.txt', 'w')
-
-names = {}
-x = 0
-most = set()
+# Save mPTP delimited species lists
+species_lists = []
+temp = []
 lines = file.readlines()
 for line in lines:
     line = line.strip()
-    line = line.split(',')
-    if len(line) == 1:
-        chosen.write(f'{line[0]}\n') # Write single taxon lines to file
+    if line != '':
+        temp.append(line)
     else:
-        x += 1
-        txids = []
-        for name in line:
-            if '~' in name:
-                chosen.write(f'{name}\n')  # Write lab mito recs to file
-            else:
-                txid = name.split('_', 1)[0] # Get taxon IDs for multi taxon lines
-                txids.append(txid)
-                names[txid] = name          # Save full fasta IDs in dict with taxon ID as key
-                count = meta[txids[0]]      # Save number of genes from first record on line
-                top = txids[0]              # Save taxon ID from first record on line
-            for txid in txids:
-                if meta[txid] > count:      # Replace count and taxon ID if another record has more genes
-                    count = meta[txid]
-                    top = txid
-            most.add(top)    # Save taxon ID with most genes
-for txid in most:
-    chosen.write(f'{names[txid]}\n')    # Write fasta ID of longest
+        species_lists.append(temp)
+        temp = []
+species_lists.append(temp)
 
-#for name in names:
- #   chosen.write(f'{name}\n')
+# Get taxon with most genes in each species list
+most = []
+for species in species_lists:
+    c = 0
+    spec = ''
+    for s in species:
+        if 'Species' in s:
+            continue
+        if len(s) <= 15:
+            most.append(s)
+        else:
+            if s in count:
+                if count[s] > 0:
+                    spec = s
+        most.append(spec)
 
-        #print(f'Count = {count}')
-        #print(f'Chosen = {best}\n')
-
-#print(f'Lab records: {found}')
+output = open(args.output, 'w')
+for m in most:
+    if m != '':
+        output.write(f'{m}\n')
