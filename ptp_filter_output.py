@@ -14,8 +14,7 @@ count = {}
 with open(args.meta) as file:
     metadata = csv.reader(file)
     for row in metadata:
-        count[row[0]] = row[5]
-print(count)
+        count[row[0]] = int(row[5])
 
 file = open(args.input)
 
