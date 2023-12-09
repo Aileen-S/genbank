@@ -16,7 +16,7 @@ print(f'{len(list(records))} records in {args.input}')
 
 output = open(args.output, 'w')
 records = (r for r in SeqIO.parse(args.input, "gb") if args.taxonomy in r.annotations["taxonomy"])
-count = SeqIO.write(records, args.output, "fasta")
+count = SeqIO.write(records, args.output, "gb")
 
 print(f"{count} records from {args.input} saved to {args.output}")
 
