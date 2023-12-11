@@ -32,21 +32,23 @@ for line in lines:
 species_lists.append(temp)
 
 # Get taxon with most genes in each species list
-most = []
+chosen = []
 for species in species_lists:
-    chosen = 0
+    ch = 0
     for s in species:
         if 'Species' in s:
             continue
         if len(s) <= 15:
-            most.append(s)
+            chosen.append(s)
         else:
             if s in count:
-                if count[s] > chosen:
-                    chosen = s
-    most.append(chosen)
+                if count[s] > ch:
+                    ch = count[s]
+    chosen.append(ch)
 
 output = open(args.output, 'w')
-for m in most:
+for m in chosen:
     if m != '':
         output.write(f'{m}\n')
+
+print(f'{len(chosen)} taxa saved to {args.output}')
