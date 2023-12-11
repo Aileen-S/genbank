@@ -24,6 +24,7 @@ temp = []
 lines = file.readlines()
 for line in lines:
     line = line.strip()
+    if 'Number of delimited species' in line: print(line)
     if line != '':
         temp.append(line)
     else:
