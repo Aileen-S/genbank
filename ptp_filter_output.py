@@ -35,7 +35,8 @@ species_lists.append(temp)
 # Get taxon with most genes in each species list
 chosen = []
 for species in species_lists:
-    ch = 0
+    gc = 0
+    ch = ''
     for s in species:
         if 'Species' in s:
             continue
@@ -43,8 +44,9 @@ for species in species_lists:
             chosen.append(s)
         else:
             if s in count:
-                if count[s] > ch:
-                    ch = count[s]
+                if count[s] > gc:
+                    gc = count[s]
+                    ch = s
     chosen.append(ch)
 
 output = open(args.output, 'w')
