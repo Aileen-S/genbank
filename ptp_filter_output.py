@@ -37,17 +37,20 @@ chosen = []
 for species in species_lists:
     gc = 0
     ch = ''
+    lab = 0
     for s in species:
         if 'Species' in s:
             continue
         if len(s) <= 15:
             chosen.append(s)
+            lab = 1
         else:
             if s in count:
                 if count[s] > gc:
                     gc = count[s]
                     ch = s
-    chosen.append(ch)
+    if lab == 0:
+        chosen.append(ch)
 
 output = open(args.output, 'w')
 for m in chosen:
