@@ -4,7 +4,7 @@ library(getopt)
 
 spec <- matrix(c(
   'taxon',  't', 2, 'character', 'BOLD search term',
-  'input',  'i', 2, 'character', 'BOLD csv file (instead of --taxon)'
+  'input',  'i', 2, 'character', 'BOLD csv file (instead of --taxon)',
   'output', 'o', 1, 'character', 'Output metadata csv'
 ), byrow = T, ncol = 5)
 
