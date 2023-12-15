@@ -12,6 +12,8 @@ opt <- getopt(spec)
 
 #getwd()
 #setwd('~/OneDrive/Diversity/')
+out <- bold_seqspec(taxon='Eretes')
+
 
 if ( !is.null(opt$taxon) ) {
   out <- bold_seqspec(taxon=opt$taxon)
@@ -37,24 +39,24 @@ lats <- split(meta, cut(meta$lat, seq(-90, 90, 10), include.lowest=TRUE))
 l = seq(-90, 90, 10)
 
 # New empty dataframe
-df <- data.frame(Lat = character(), Rows = numeric(), BINs = numeric(), Species = numeric())
-
+df <- data.frame(Lat = character(), IDs = numeric(), BINs = numeric(), Species = numeric())
+df
 # Loop through list of dataframes, count entries, unique species and unique BINs
 x = 1
 for (lat in lats) {
   Lat = paste(l[x], 'to', l[x] + 10)
-  Rows = nrow(lat)
+  IDs = if (is.null(length(unique(lat$processid)))) 0 else length(unique(lat$processid))
   BINs = if (is.null(length(unique(lat$bin_uri)))) 0 else length(unique(lat$bin_uri))
   Species = length(unique(lat$species_taxID))
-  df <- rbind(df, data.frame(Lat = Lat, Rows = Rows, BINs = BINs, Species = Species))
+  df <- rbind(data.frame(Lat = Lat, IDs = IDs, BINs = BINs, Species = Species), df)
   x <- x + 1
   }
 
 # Add new column for barcode:BIN ratio
-df$Barcode_BIN_Ratio <- df$Rows/df$BINs
+df$Barcode_BIN_Ratio <- df$IDs/df$BINs
 
 # Barcode: Species ratio
-df$Barcode_Species_Ratio <- df$Rows/df$Species
+df$Barcode_Species_Ratio <- df$IDs/df$Species
 
 df
 
