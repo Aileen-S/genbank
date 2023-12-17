@@ -5,7 +5,8 @@ library(getopt)
 spec <- matrix(c(
   'taxon',  't', 2, 'character', 'BOLD search term',
   'input',  'i', 2, 'character', 'BOLD csv file (instead of --taxon)',
-  'output', 'o', 1, 'character', 'Output metadata csv'
+  'output', 'o', 1, 'character', 'Output metadata csv',
+  'raw',    'r', 2, 'logical', 'Also save raw metadata before processing'
 ), byrow = T, ncol = 5)
 
 opt <- getopt(spec)
@@ -20,6 +21,10 @@ if ( !is.null(opt$taxon) ) {
 } else {
   out <- read.csv(opt$input)
 } 
+
+if ( !is.null(opt$raw) ) {
+  write.csv(out, paste('raw', opt$output, sep = '_'), row.names = FALSE)
+}
 
 
 print(paste(nrow(out), 'records found for', opt$taxon))
@@ -40,7 +45,7 @@ l = seq(-90, 90, 10)
 
 # New empty dataframe
 df <- data.frame(Lat = character(), IDs = numeric(), BINs = numeric(), Species = numeric())
-df
+
 # Loop through list of dataframes, count entries, unique species and unique BINs
 x = 1
 for (lat in lats) {
