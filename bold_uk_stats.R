@@ -27,8 +27,8 @@ spec <- matrix(c(
 opt <- getopt(spec)
 
 
-out <- bold_seqspec(taxon='Longitarsus')
-out <- read.csv('raw_Dytiscidae.csv')
+#out <- bold_seqspec(taxon='Longitarsus')
+#out <- read.csv('raw_Dytiscidae.csv')
 
 
 if ( !is.null(opt$input) ) {
