@@ -66,7 +66,7 @@ coverage <- BINs/spec
 print(paste(coverage, 'of UK species represented (approx)'))
 
 sink(opt$output)
-cat(paste(opt$taxon, barcodes, BINs, bar_bin, spec, coverage, sep = ','))
+cat(paste(opt$taxon, barcodes, BINs, bar_bin, spec, coverage, '\n', sep = ','))
 sink()
 print(paste('Stats written to', opt$output))
 
