@@ -40,7 +40,7 @@ args = parser.parse_args()         # Process input args from command line
 
 suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
-mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CTYB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
@@ -66,12 +66,14 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
+ids = []
 if args.list:
-    ids = []
     file = open(args.list)
     lines = file.readlines()
     for line in lines:
         ids.append(line.strip())
+    print('ids:')
+    print(ids)
 
 # Search through GBIDs
 species = {}
