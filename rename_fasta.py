@@ -30,3 +30,4 @@ for rec in records:
                 rec.id = n
         output.write(f'>{rec.id}\n{rec.seq}\n')
 
+print(f'Saved renamed fasta to {args.output}')
