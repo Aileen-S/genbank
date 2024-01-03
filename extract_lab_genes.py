@@ -160,18 +160,20 @@ for gene, records in species.items():
     for rec in records:
         c = count[rec['gbid']]
         if rec['txid'] == '':
-            try:
+            if rec['frame'] == '':
+                rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
+                y +=1
+            else:
                 file.write(f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n")
                 x += 1
-            except IndexError:
+
+        else:
+            if rec['frame'] == '':
                 rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
                 y +=1
-        else:
-            try:
+            else:
                 file.write(f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
                 x += 1
-            except IndexError:
-                rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
-                y +=1
+
     print(f'{x} records written to {gene}.fasta')
     print(f'{y} records written to {gene}.fa')
