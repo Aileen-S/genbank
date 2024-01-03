@@ -68,7 +68,7 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
 
 if args.list:
     ids = []
-    file = open(args.input)
+    file = open(args.list)
     lines = file.readlines()
     for line in lines:
         ids.append(line.strip())
