@@ -158,17 +158,23 @@ for gene, records in species.items():
     x = 0
     y = 0
     for rec in records:
-        c = count[rec['gbid']]
-        if rec['txid'] == '':
-            if rec['frame'] == '':
-                fasta_id = (f">{rec['gbid']}\n{rec['seq']}\n")
-            else:
-                fasta_id = (f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+        if rec['frame'] == '':
+            fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
         else:
-            if rec['frame'] == '':
-                fasta_id = (f">{rec['gbid']}\n{rec['seq']}\n")
-            else:
-                fasta_id = (f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
+
+        #c = count[rec['gbid']]
+        #if rec['txid'] == '':
+        #    if rec['frame'] == '':
+        #        fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
+        #    else:
+        #        fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
+
+        #else:
+        #    if rec['frame'] == '':
+        #        fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
+        #    else:
+        #        fasta_id = f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n"
         if 'frame' in fasta_id:
             file.write(fasta_id)
             x += 1
