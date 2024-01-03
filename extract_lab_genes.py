@@ -161,22 +161,19 @@ for gene, records in species.items():
         c = count[rec['gbid']]
         if rec['txid'] == '':
             if rec['frame'] == '':
-                print(f'no frame = {rec["frame"]}')
-                rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
-                y +=1
+                fasta_id = (f">{rec['gbid']}\n{rec['seq']}\n")
             else:
-                print(f'frame = {rec["frame"]}')
-                file.write(f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n")
-                x += 1
+                fasta_id = (f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n")
         else:
             if rec['frame'] == '':
-                print(f'no frame = {rec["frame"]}')
-                rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
-                y +=1
+                fasta_id = (f">{rec['gbid']}\n{rec['seq']}\n")
             else:
-                print(f'frame = {rec["frame"]}')
-                file.write(f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
-                x += 1
-
+                fasta_id = (f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+        if 'frame' in fasta_id:
+            file.write(fasta_id)
+            x += 1
+        else:
+            rf.write(fasta_id)
+            y += 1
     print(f'{x} records written to {gene}.fasta')
     print(f'{y} records written to {gene}.fa')
