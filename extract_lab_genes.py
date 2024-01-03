@@ -161,17 +161,20 @@ for gene, records in species.items():
         c = count[rec['gbid']]
         if rec['txid'] == '':
             if rec['frame'] == '':
+                print(f'no frame = {rec["frame"]}')
                 rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
                 y +=1
             else:
+                print(f'frame = {rec["frame"]}')
                 file.write(f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n")
                 x += 1
-
         else:
             if rec['frame'] == '':
+                print(f'no frame = {rec["frame"]}')
                 rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
                 y +=1
             else:
+                print(f'frame = {rec["frame"]}')
                 file.write(f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
                 x += 1
 
