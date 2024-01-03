@@ -72,8 +72,7 @@ if args.list:
     lines = file.readlines()
     for line in lines:
         ids.append(line.strip())
-    print('ids:')
-    print(ids)
+
 
 # Search through GBIDs
 species = {}
