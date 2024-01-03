@@ -33,6 +33,8 @@ parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
+parser.add_argument('-l', '--list', type=str, help="Limit to list of db_ids in file")
+
 
 args = parser.parse_args()         # Process input args from command line
 
@@ -64,6 +66,12 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
+if args.list:
+    ids = []
+    file = open(args.input)
+    lines = file.readlines()
+    for line in lines:
+        ids.append(line.strip())
 
 # Search through GBIDs
 species = {}
@@ -71,6 +79,9 @@ count = {}
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
+        if args.list:
+            if rec.name not in ids:
+                continue
         try:
             db_xref = rec.features[0].qualifiers["db_xref"]
             for ref in db_xref:
