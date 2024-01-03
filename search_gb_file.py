@@ -66,13 +66,14 @@ genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
          "RNApol": ["RNA POL II", "RNA POL2", "RNA POLYMERASE II LARGE SUBUNIT"],
          "Wg": ["WG", "WINGLESS", "WNG", "WNT", "WNT1", "WNT-4"]}
 
-mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CTYB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 nuc = ['AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 rna = ['12S', '16S', '18S', '28S']
 cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6', 'AK', 'CAD', 'EF1A', 'H3', 'RNApol', 'Wg']
 
 misc = ["similar to cytochrome oxidase subunit I", "similar to cytochrome oxidase subunit 1", "similar to cytochrome c oxidase subunit I; COI", "similar to cytochrome c oxidase subunit I", "sequence contains partial cox1, tRNA-Leu and partial cox2 genes", "cox1", "coding region not determined; cytochrome oxidase subunit I", "similar to cytochrome oxidase subunit I; COI", "similar to cytochrome c oxidase", "similar to cytochrome oxidase subunit 1; 3' barcoding region; LCO-HCO"]
 
+suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
 unrec_genes = set()
 unrec_species = []
@@ -123,8 +124,14 @@ with open(args.gb_file) as file:
         spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
             .replace(')', '_').replace(';', '_').replace(':', '_').replace("'", "").replace(',', '')
         specfasta = spec.replace(" ", "_")
-        taxonomy = rec.annotations["taxonomy"][10:16]
-        taxonomy.extend([""] * (6 - len(taxonomy)))
+        taxonomy = ['', '', '', '', '']
+        for tax in rec.annotations["taxonomy"]:
+            if tax in suborders: taxonomy[0] = tax
+            if tax.endswith('oidea'): taxonomy[1] = tax
+            if tax.endswith('idae'): taxonomy[2] = tax
+            if tax.endswith('inae'): taxonomy[3] = tax
+            if tax.endswith('ini'): taxonomy[4] = tax
+        taxonomy.append(spec.split(' ')[0])
         fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
 
         if "country" in rec.features[0].qualifiers:
@@ -139,6 +146,15 @@ with open(args.gb_file) as file:
             region = ""
         if "lat_lon" in rec.features[0].qualifiers:
             latlon = rec.features[0].qualifiers["lat_lon"][0]
+            ll_list = latlon.split(" ")
+            if ll_list[1] == "N":
+                lat = ll_list[0]
+            else:
+                lat = "-" + ll_list[0]
+            if ll_list[3] == "E":
+                long = ll_list[2]
+            else:
+                long = "-" + ll_list[2]
         else:
             latlon = ""
         if "collection_date" in rec.features[0].qualifiers:
@@ -209,6 +225,8 @@ with open(args.gb_file) as file:
                       "country": country,
                       "region": region,
                       "latlon": latlon,
+                      "lat": lat,
+                      "long": long,
                       "refs": refs}
             if rec.name in misc_ids:
                 misc_sequences.append(output)
@@ -257,16 +275,17 @@ for tax, stdname in species.items():
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-         "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
-         "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
-         "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
-    #writer.writerow(
-        #["Accession", "Taxon ID", 'BOLD', "Species", '18S', "28S", "AK", "CAD", 'EF1A', 'H3', 'RNApol', 'Wg',
-        # '12S', '16S', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+        ["FastaID", "Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+         "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
+         "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
+         "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+
+
+        #["Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
         # "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
         # "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
         # "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+
 
 gen = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
@@ -282,7 +301,6 @@ for gene, records in longest.items():
             else:
                 row.append("")
     # Also include gene count column
-
         row.extend(output["taxonomy"])
         gen_spec = output['spec'].split(' ')
         genus = gen_spec[0]
@@ -293,6 +311,8 @@ for gene, records in longest.items():
         row.append(output["country"])
         row.append(output["region"])
         row.append(output["latlon"])
+        row.append(output["lat"])
+        row.append(output["long"])
         row.extend(output["refs"])
         writer.writerow(row)
 
