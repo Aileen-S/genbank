@@ -8,8 +8,6 @@ parser.add_argument("-n", "--names", type=str, help="List of new names (with old
 parser.add_argument("-o", "--output", type=str, help="Output file")
 args = parser.parse_args()
 
-
-
 new = []
 with open(args.names) as file:
     lines = file.readlines()
