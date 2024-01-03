@@ -19,10 +19,10 @@ records = SeqIO.parse(args.input, "fasta")
 output = open(args.output, 'w')
 for rec in records:
     if ';frame=' in rec.id:
-        recid, frame = rec.id.split(';frame=')
+        recid, frame = rec.id.split(';')
         for n in new:
             if recid in n:
-                rec.id = f'{n};frame={frame}'
+                rec.id = f'{n};{frame}'
         output.write(f'>{rec.id}\n{rec.seq}\n')
     else:
         for n in new:
