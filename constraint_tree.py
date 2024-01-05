@@ -12,32 +12,41 @@ Dytiscidae_families = {'Coptotominae': [],
                        'Agabinae': [],
                        'Colymbetinae': [],
                        'Cybistrini': [],
+                       'Cybistrini2': [],
                        'Dytiscinae': [],
+                       'Dytiscinae2': [],
                        'Copelatinae': [],
                        'Matinae': [],
                        'Laccophilinae': [],
-                       'Hydroporinae': []}
+                       'Hydroporinae': []
+                       }
 
-Dytiscidae = '((Coptotominae,Lancetinae),(Laccophilinae,(((Agabinae,Colymbetinae),(Cybistrini,Dytiscinae)),(Copelatinae,(Matinae,Hydroporinae)))));'
+Dytiscidae = '((Coptotominae,Lancetinae),(Laccophilinae,(((Agabinae,Colymbetinae),(Cybistrini2,Dytiscinae2)),(Copelatinae,(Matinae,Hydroporinae)))));'
 
 records = SeqIO.parse(args.input, "fasta")
 x = 0
 for rec in records:
     for key in Dytiscidae_families.keys():
         if key in rec.id:
-            id = rec.id.replace('.', '').replace('-', '')
             Dytiscidae_families[key].append(rec.id)
+
+for taxon in list(Dytiscidae_families['Dytiscinae']):
+    if 'Cybist' not in taxon:
+        Dytiscidae_families['Dytiscinae2'].append(taxon)
+
+Dytiscidae_families.pop('Dytiscinae')
+Dytiscidae_families['Cybistrini2'] = Dytiscidae_families.pop('Cybistrini')
 
 for key, value in Dytiscidae_families.items():
     if value == []:
         print(f'Warning, no taxa found for {key}')
+    else:
+        print(f'{len(value)} taxa for {key}')
 
 for key, value in Dytiscidae_families.items():
     taxa = ','.join(value)
     Dytiscidae = Dytiscidae.replace(key, f'({taxa})')
-    #print(taxa)
 
-file = open(args.output, 'w')
-file.write(Dytiscidae)
+with open(args.output, 'w') as file:
+    file.write(Dytiscidae)
 
-print(Dytiscidae_families['Cybistrini'])
