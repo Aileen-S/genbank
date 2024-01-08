@@ -91,15 +91,6 @@ if args.accs:
         accs.append(acc)
     print(f'{len(accs)} IDs found in {args.accs}')
 
-if args.skip:
-    skip = []
-    file = open(args.skip)
-    lines = file.readlines()
-    for line in lines:
-        txid = line.strip()
-        skip.append(txid)
-    print(f'{len(skip)} IDs found in {args.skip}')
-
 # Search through GBIDs
 species = {}
 sequences = []
@@ -121,18 +112,12 @@ with open(args.gb_file) as file:
             db_xref = rec.features[0].qualifiers["db_xref"]
         except KeyError:
             continue
+        bold = ''
         for ref in db_xref:
             if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
                 txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
-                if "BOLD" in ref:
-                    bold = (ref.split(":")[1]).split('.')[0]
-            try:
-                bold
-            except NameError:
-                bold = ''
-        if args.skip:
-            if txid in skip:
-                continue
+            if "BOLD" in ref:
+                bold = (ref.split(":")[1]).split('.')[0]
         spec = rec.annotations["organism"]
         # Replace the following characters: > < . ( ) ; : ' ,
         spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
