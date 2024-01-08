@@ -156,6 +156,8 @@ with open(args.gb_file) as file:
                 long = "-" + ll_list[2]
         else:
             latlon = ""
+            lat = ""
+            long = ""
         if "collection_date" in rec.features[0].qualifiers:
             c_date = rec.features[0].qualifiers["collection_date"][0]
         else:
