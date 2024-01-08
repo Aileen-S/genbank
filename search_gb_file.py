@@ -38,6 +38,8 @@ parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file
 parser.add_argument('-a', '--accs', type=str, help="Input file with list of accession numbers")
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
+parser.add_argument('-s', '--skip', type=str, help="File with list of TXIDs to avoid")
+
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
@@ -89,6 +91,15 @@ if args.accs:
         accs.append(acc)
     print(f'{len(accs)} IDs found in {args.accs}')
 
+if args.skip:
+    skip = []
+    file = open(args.skip)
+    lines = file.readlines()
+    for line in lines:
+        txid = line.strip()
+        skip.append(txid)
+    print(f'{len(skip)} IDs found in {args.skip}')
+
 # Search through GBIDs
 species = {}
 sequences = []
@@ -119,6 +130,9 @@ with open(args.gb_file) as file:
                 bold
             except NameError:
                 bold = ''
+        if args.skip:
+            if txid in skip:
+                continue
         spec = rec.annotations["organism"]
         # Replace the following characters: > < . ( ) ; : ' ,
         spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
