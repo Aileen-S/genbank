@@ -214,7 +214,7 @@ with open(args.gb_file) as file:
                       "txid": txid,
                       "bold": bold,
                       "description": rec.description,
-                      "spec": rec.annotations["organism"],
+                      "spec": spec,
                       "rec date": rec.annotations["date"],
                       "c date": c_date,
                       "taxonomy": taxonomy,
