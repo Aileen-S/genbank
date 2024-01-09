@@ -92,6 +92,7 @@ if args.accs:
     print(f'{len(accs)} IDs found in {args.accs}')
 
 # Search through GBIDs
+count = open('count.csv', 'w')
 species = {}
 sequences = []
 nohits = []
@@ -245,6 +246,8 @@ with open(args.gb_file) as file:
                     x += 1
         if g == 0:
             nohits.append(rec.name)
+        else:
+            count.write(f'{rec.name},{g}')
 
 print(f"\n{x} sequences found for requested genes\n"
       f"Saving longest sequence for each gene for each NCBI taxonomy ID")
