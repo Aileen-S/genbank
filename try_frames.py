@@ -28,14 +28,14 @@ with open(args.input) as file:
 if args.found:
     with open(args.found, "w") as outfile:
         for rec_id, seq in found.items():
-            outfile.write(f'{rec_id}1\n{seq}\n')
-            outfile.write(f'{rec_id}2\n{seq}\n')
-            outfile.write(f'{rec_id}3\n{seq}\n')
+            outfile.write(f'>{rec_id}1\n{seq}\n')
+            outfile.write(f'>{rec_id}2\n{seq}\n')
+            outfile.write(f'>{rec_id}3\n{seq}\n')
 
 
 if args.notfound:
     with open(args.notfound, "w") as outfile:
         for rec_id, seq in notfound.items():
-            outfile.write(f'{rec_id}1\n{seq}\n')
-            outfile.write(f'{rec_id}2\n{seq}\n')
-            outfile.write(f'{rec_id}3\n{seq}\n')
+            outfile.write(f'>{rec_id}1\n{seq}\n')
+            outfile.write(f'>{rec_id}2\n{seq}\n')
+            outfile.write(f'>{rec_id}3\n{seq}\n')
