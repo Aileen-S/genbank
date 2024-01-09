@@ -183,7 +183,7 @@ with open(args.gb_file) as file:
                             misc_ids.append(rec.name)
                             stdname = 'COX1'
                             rec.name = f'misc_{rec.name}'
-                            frame = ''
+                            frame = ['']
                     except KeyError:
                         continue
                 else:
@@ -206,7 +206,7 @@ with open(args.gb_file) as file:
                     if 'codon_start' in feature.qualifiers:
                         frame = feature.qualifiers["codon_start"]
                     else:
-                        frame = ''
+                        frame = ['']
                         print(f"Reading frame missing from record {rec.name}, {stdname}.")
                 else:
                     frame = ''
