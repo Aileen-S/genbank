@@ -101,6 +101,7 @@ x = 0  # Count taxids
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
+        rec.name = rec.name.replace('_', '-')
         if args.accs:
             if rec.name not in accs:
                 continue
