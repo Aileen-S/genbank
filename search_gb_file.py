@@ -181,7 +181,8 @@ with open(args.gb_file) as file:
                         if feature.qualifiers['note'][0] in misc:
                             seq = feature.extract(rec.seq)
                             misc_ids.append(rec.name)
-                            stdname = 'misc'
+                            stdname = 'COX1'
+                            rec.name = f'misc_{rec.name}'
                             frame = ''
                     except KeyError:
                         continue
@@ -231,19 +232,19 @@ with open(args.gb_file) as file:
                       "lat": lat,
                       "long": long,
                       "refs": refs}
-            if rec.name in misc_ids:
-                misc_sequences.append(output)
-            else:
-                if txid in species:                              # If taxon ID in dict
-                    if stdname in species[txid]:                 # If gene in dict for that taxon ID
-                        species[txid][stdname].append(output)    # Add gene info list to dict
-                        x += 1
-                    else:
-                        species[txid][stdname] = [output]      # Otherwise add to dict with new key
-                        x += 1
-                else:
-                    species[txid] = {stdname: [output]}      # Otherwise add to dict with new key
+            #if rec.name in misc_ids:
+            #    misc_sequences.append(output)
+            #else:
+            if txid in species:                              # If taxon ID in dict
+                if stdname in species[txid]:                 # If gene in dict for that taxon ID
+                    species[txid][stdname].append(output)    # Add gene info list to dict
                     x += 1
+                else:
+                    species[txid][stdname] = [output]      # Otherwise add to dict with new key
+                    x += 1
+            else:
+                species[txid] = {stdname: [output]}      # Otherwise add to dict with new key
+                x += 1
         if g == 0:
             nohits.append(rec.name)
         else:
