@@ -247,7 +247,7 @@ with open(args.gb_file) as file:
         if g == 0:
             nohits.append(rec.name)
         else:
-            count.write(f'{rec.name},{g}')
+            count.write(f'{rec.name},{g}\n')
 
 print(f"\n{x} sequences found for requested genes\n"
       f"Saving longest sequence for each gene for each NCBI taxonomy ID")
