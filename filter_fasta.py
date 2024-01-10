@@ -8,12 +8,13 @@ parser.add_argument("-n", "--notfound", type=str, help="Output file for input se
 parser.add_argument("-s", "--search", type=str, help="File with IDs to search for. Specify file type with -t.")
 parser.add_argument("-p", "--partial", action='store_true', help="Search file contains only part of input fasta ids (eg without frame tags or taxonomy)")
 
-parser.add_argument('-t', '--type', type=str, choices=['list', 'fasta', 'hmmer'], help="Search file type:\n"
-                                                                                         "list: file with list of complete or partial fasta IDs\n"
-                                                                                         "fasta: fasta file\n"
-                                                                                         "hmmer: file with HMMER output from --tblout option\n")
+parser.add_argument('-t', '--type', type=str, choices=['list', 'fasta', 'hmmer'],
+                    help="Search file type:\n"
+                         "list: file with list of complete or partial fasta IDs\n"
+                         "fasta: fasta file\n"
+                         "hmmer: file with HMMER output from --tblout option\n")
+
 args = parser.parse_args()         # Process input args from command line
-#args = argparse.Namespace(input='ATP6.fasta', filter='test.txt')
 
 filter = []
 with open(args.search) as infile:
@@ -35,6 +36,9 @@ with open(args.search) as infile:
             line = line.split(' ')
             filter.append(line[0])
 
+len_filter = len(filter)
+print(f'{len_filter} IDs in {args.search}')
+
 records = SeqIO.parse(args.input, "fasta")
 print(f'{len(list(records))} records in {args.input}')
 
@@ -51,7 +55,7 @@ if args.partial:
 if args.found:
     records = (r for r in SeqIO.parse(args.input, "fasta") if r.id in filter)
     count = SeqIO.write(records, args.found, "fasta")
-    print(f"{count} of {len(filter)} records from {args.search} found in {args.input}")
+    print(f"{count} of {len_filter} records from {args.search} found in {args.input}")
     print(f"{count} records from {args.input} saved to {args.found}")
 
 if args.notfound:
