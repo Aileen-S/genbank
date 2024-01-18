@@ -134,7 +134,6 @@ with open(args.gb_file) as file:
             if "BOLD" in ref:
                 bold = (ref.split(":")[1]).split('.')[0]
         if args.txid:
-            print(txid)
             if txid not in txids:
                 continue
         spec = rec.annotations["organism"]
@@ -151,7 +150,6 @@ with open(args.gb_file) as file:
             if tax.endswith('ini'): taxonomy[4] = tax
         taxonomy.append(spec.split(' ')[0])
         fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
-
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
             if ":" in location:
@@ -188,11 +186,12 @@ with open(args.gb_file) as file:
                 refs.append(ref.title)
                 refs.append(ref.journal)
         else:
-            continue
+            references = ''
         g = 0
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA'):
+                continue
                 #if type == 'misc_feature':
                 #    try:
                 #        if feature.qualifiers['note'][0] in misc:
@@ -267,12 +266,14 @@ with open(args.gb_file) as file:
         else:
             count.write(f'{rec.name},{g}\n')
 
-print(f"\n{x} sequences found for requested genes\n"
-      f"Saving longest sequence for each gene for each NCBI taxonomy ID")
+
+
+print(f"\n{x} sequences found for requested genes\n")
 
 
 # Set record length as 0, iterate through records and replace whenever another sequence is longer.
 def findmax(x):
+    print("Saving longest sequence for each gene for each NCBI taxonomy ID")
     max = x[0]["length"]
     maxrec = x[0]
     for record in x:
