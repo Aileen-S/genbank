@@ -13,7 +13,7 @@ parser.add_argument("-o", "--output", type=str, help="output txid list file")
 args = parser.parse_args()
 
 accs = []
-file = open('test.txt')
+file = open(args.input)
 lines = file.readlines()
 for line in lines:
     acc = line.strip()
@@ -24,7 +24,7 @@ print(f'{len(accs)} IDs found')
 # Search through GBIDs
 x = 0  # Count taxids
 txids = []
-with open('test.gb') as file:
+with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
         if rec.name in accs:
