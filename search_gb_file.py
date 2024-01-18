@@ -35,8 +35,12 @@ def set_feat_name(feat, name):
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
-parser.add_argument('-a', '--accs', type=str, help="Input file with list of accession numbers")
+parser.add_argument('-a', '--accs', type=str, help="Input file with list of genbank accession numbers")
+parser.add_argument('-x', '--txid', type=str, help="Input file with list of genbank taxon IDs")
+
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
+parser.add_argument('-l', '--longest', action='store_true', help='Save only longest sequences per gene per taxon ID')
+
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-s', '--skip', type=str, help="File with list of TXIDs to avoid")
 
@@ -91,6 +95,15 @@ if args.accs:
         accs.append(acc)
     print(f'{len(accs)} IDs found in {args.accs}')
 
+if args.txid:
+    txids = []
+    file = open(args.txid)
+    lines = file.readlines()
+    for line in lines:
+        txid = line.strip()
+        txids.append(txid)
+    print(txids)
+
 # Search through GBIDs
 count = open('count.csv', 'w')
 species = {}
@@ -120,6 +133,10 @@ with open(args.gb_file) as file:
                 txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
             if "BOLD" in ref:
                 bold = (ref.split(":")[1]).split('.')[0]
+        if args.txid:
+            print(txid)
+            if txid not in txids:
+                continue
         spec = rec.annotations["organism"]
         # Replace the following characters: > < . ( ) ; : ' ,
         spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
@@ -265,18 +282,6 @@ def findmax(x):
     return maxrec
 
 
-# Dict for longest sequences, key is gene stdname, value is list of records
-longest = {}
-for tax, stdname in species.items():
-    for gene, records in stdname.items():
-        chosen = findmax(records)
-        if gene in longest:
-            longest[gene].append(chosen)
-        else:
-            longest[gene] = [chosen]
-
-# Save each gene list to separate fasta file
-
 # Write CSV metadata file
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
@@ -286,15 +291,29 @@ with open("metadata.csv", "w") as file:     # Open output file
          "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
          "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
 
-
-        #["Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
-        # "Suborder", "Infraorder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
-        # "Date Collected", "Country", "Region", "Lat/Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal", "Ref2 Author",
-        # "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
-
-
 gen = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
+
+# Dict for longest sequences, key is gene stdname, value is list of records
+longest = {}
+for tax, stdname in species.items():
+    for gene, records in stdname.items():
+        # Get longest sequence for each taxon ID, for each gene
+        if args.longest:
+            chosen = findmax(records)
+            if gene in longest:
+                longest[gene].append(chosen)
+            else:
+                longest[gene] = [chosen]
+        # Keep all sequences
+        else:
+            for record in records:
+                if gene in longest:
+                    longest[gene].append(record)
+                else:
+                    longest[gene] = [record]
+
+# Save each gene list to separate fasta file
 
 file = open("metadata.csv", "a")
 writer = csv.writer(file)
