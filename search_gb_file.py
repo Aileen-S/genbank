@@ -193,19 +193,19 @@ with open(args.gb_file) as file:
         for feature in rec.features:
             type = feature.type
             if type not in ('CDS', 'rRNA'):
-                if type == 'misc_feature':
-                    try:
-                        if feature.qualifiers['note'][0] in misc:
-                            seq = feature.extract(rec.seq)
-                            misc_ids.append(rec.name)
-                            stdname = 'COX1'
-                            rec.name = f'misc_{rec.name}'
-                            frame = ['']
-                    except KeyError:
-                        continue
-                else:
-                    other_type.add(type)
-                    continue
+                #if type == 'misc_feature':
+                #    try:
+                #        if feature.qualifiers['note'][0] in misc:
+                #            seq = feature.extract(rec.seq)
+                #            misc_ids.append(rec.name)
+                #            stdname = 'COX1'
+                #            rec.name = f'misc_{rec.name}'
+                #            frame = ['']
+                #    except KeyError:
+                #        continue
+                #else:
+                #    other_type.add(type)
+                #    continue
             else:
                 name = get_feat_name(feature)                       # Find gene name
                 stdname = ""
