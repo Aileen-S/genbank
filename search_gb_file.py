@@ -367,11 +367,11 @@ for gene, records in longest.items():
             if args.fasta_id == 'txid':
                 f_id = rec['txid']
             if args.fasta_id == 'both':
-                f_id = f"{rec['txid']}_{rec['gbid']}"
+                f_id = f"{rec['txid']}/_{rec['gbid']}/"
             else:
-                f_id = rec['gbid']
+                f_id = f"{rec['gbid']}/"
         else:
-            f_id = rec['gbid']
+            f_id = f"{rec['gbid']}/"
         if gene in cds:
             file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
             x += 1
@@ -385,13 +385,13 @@ x = 0
 for misc in misc_sequences:
     if args.fasta_id:
         if args.fasta_id == 'txid':
-            f_id = misc['txid']
+            f_id = f"{misc['txid']}/"
         if args.fasta_id == 'both':
-            f_id = f"{misc['txid']}_{misc['gbid']}"
+            f_id = f"{misc['txid']}/_{misc['gbid']}/"
         else:
-            f_id = misc['gbid']
+            f_id = f"{misc['gbid']}/"
     else:
-        f_id = misc['gbid']
+        f_id = f"{misc['gbid']}/"
     file.write(f">{f_id}_{misc['fastatax']}\n{misc['seq']}\n")
     x += 1
 print(f'{x} records written to misc.fasta')
