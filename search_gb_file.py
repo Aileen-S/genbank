@@ -39,6 +39,8 @@ parser.add_argument('-a', '--accs', type=str, help="Input file with list of genb
 parser.add_argument('-x', '--txid', type=str, help="Input file with list of genbank taxon IDs")
 
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
+parser.add_argument('-c', '--coi', action='store_true', help='Save only COX1')
+
 parser.add_argument('-l', '--longest', action='store_true', help='Save only longest sequences per gene per taxon ID')
 
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
@@ -217,6 +219,9 @@ with open(args.gb_file) as file:
                     continue
                 if args.mito:
                     if stdname not in mito:
+                        continue
+                if args.coi:
+                    if stdname != 'COX1':
                         continue
                 if stdname in cds:
                     if 'codon_start' in feature.qualifiers:
