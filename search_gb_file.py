@@ -278,7 +278,6 @@ print(f"\n{x} sequences found for requested genes\n")
 
 # Set record length as 0, iterate through records and replace whenever another sequence is longer.
 def findmax(x):
-    print("Saving longest sequence for each gene for each NCBI taxonomy ID")
     max = x[0]["length"]
     maxrec = x[0]
     for record in x:
