@@ -44,7 +44,7 @@ parser.add_argument('-c', '--coi', action='store_true', help='Save only COX1')
 parser.add_argument('-l', '--longest', action='store_true', help='Save only longest sequences per gene per taxon ID')
 
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
-parser.add_argument('-s', '--skip', type=str, help="File with list of TXIDs to avoid")
+parser.add_argument('-s', '--skip', type=str, help="File with list of GBIDs to avoid")
 
 
 args = parser.parse_args()         # Process input args from command line
@@ -97,6 +97,16 @@ if args.accs:
         accs.append(acc)
     print(f'{len(accs)} IDs found in {args.accs}')
 
+if args.skip:
+    skip = []
+    file = open(args.skip)
+    lines = file.readlines()
+    for line in lines:
+        rec = line.strip()
+        skip.append(rec)
+    print(f'{len(skip)} IDs to avoid found in {args.skip}')
+
+
 if args.txid:
     txids = []
     file = open(args.txid)
@@ -117,7 +127,9 @@ x = 0  # Count taxids
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
-        rec.name = rec.name.replace('_', '-')
+        if args.skip:
+            if rec.name in skip:
+                continue
         if args.accs:
             if rec.name not in accs:
                 continue
