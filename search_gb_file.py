@@ -152,6 +152,16 @@ with open(args.gb_file) as file:
             if tax.endswith('ini'): taxonomy[4] = tax
         taxonomy.append(spec.split(' ')[0])
         fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+        if args.fasta_id:
+            if args.fasta_id == 'txid':
+                f_id = txid
+            if args.fasta_id == 'both':
+                f_id = f"{txid}/_{rec.name}/"
+            else:
+                f_id = f"{rec.name}/"
+        else:
+            f_id = f"{rec.name}/"
+        fasta_id = f'{f_id}_{fastatax}'
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
             if ":" in location:
@@ -242,7 +252,7 @@ with open(args.gb_file) as file:
                       "rec date": rec.annotations["date"],
                       "c date": c_date,
                       "taxonomy": taxonomy,
-                      "fastatax": fastatax,
+                      "fasta_id": fasta_id,
                       "type": type,
                       "length": len(seq),
                       "seq": seq,
@@ -291,7 +301,7 @@ def findmax(x):
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["FastaID", "Accession", "Taxon ID", 'BOLD', "Species", 'Misc', 'ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6',
+        ["FastaID", "Accession", "Taxon ID", 'BOLD', "Species", 'Gene', 'Length',
          "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
          "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
@@ -324,17 +334,10 @@ file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for gene, records in longest.items():
     for output in records:
-        row = [output["gbid"], output["txid"], output["bold"], output["spec"], '']
-        for g in gen:
-            if g == output['gene']:
-                row.append(output['length'])
-            else:
-                row.append("")
+        row = [output["fasta_id"], output["gbid"], output["txid"], output["bold"], output["spec"], output['gene'], output['length']]
+
     # Also include gene count column
         row.extend(output["taxonomy"])
-        gen_spec = output['spec'].split(' ')
-        genus = gen_spec[0]
-        row.append(genus)
         row.append(output["description"])
         row.append(output["rec date"])
         row.append(output["c date"])
@@ -367,38 +370,29 @@ for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
     x = 0
     for rec in records:
-        if args.fasta_id:
-            if args.fasta_id == 'txid':
-                f_id = rec['txid']
-            if args.fasta_id == 'both':
-                f_id = f"{rec['txid']}/_{rec['gbid']}/"
-            else:
-                f_id = f"{rec['gbid']}/"
-        else:
-            f_id = f"{rec['gbid']}/"
         if gene in cds:
-            file.write(f">{f_id}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n")
+            file.write(f">{rec['fasta_id']};frame={rec['frame'][0]}\n{rec['seq']}\n")
             x += 1
         else:
-            file.write(f">{f_id}_{rec['fastatax']}\n{rec['seq']}\n")
+            file.write(f">{rec['fasta_id']}\n{rec['seq']}\n")
             x += 1
     print(f'{x} records written to {gene}.fasta')
 
-file = open('misc.fasta', 'w')
-x = 0
-for misc in misc_sequences:
-    if args.fasta_id:
-        if args.fasta_id == 'txid':
-            f_id = f"{misc['txid']}/"
-        if args.fasta_id == 'both':
-            f_id = f"{misc['txid']}/_{misc['gbid']}/"
-        else:
-            f_id = f"{misc['gbid']}/"
-    else:
-        f_id = f"{misc['gbid']}/"
-    file.write(f">{f_id}_{misc['fastatax']}\n{misc['seq']}\n")
-    x += 1
-print(f'{x} records written to misc.fasta')
+#file = open('misc.fasta', 'w')
+#x = 0
+#for misc in misc_sequences:
+#    if args.fasta_id:
+#        if args.fasta_id == 'txid':
+#            f_id = f"{misc['txid']}/"
+#        if args.fasta_id == 'both':
+#            f_id = f"{misc['txid']}/_{misc['gbid']}/"
+#        else:
+#            f_id = f"{misc['gbid']}/"
+#    else:
+#        f_id = f"{misc['gbid']}/"
+#    file.write(f">{f_id}_{misc['fastatax']}\n{misc['seq']}\n")
+#    x += 1
+#print(f'{x} records written to misc.fasta')
 
 
 print("Metadata saved to metadata.csv")
