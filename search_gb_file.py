@@ -127,9 +127,6 @@ x = 0  # Count taxids
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
-        if args.skip:
-            if rec.name in skip:
-                continue
         if args.accs:
             if rec.name not in accs:
                 continue
@@ -149,6 +146,9 @@ with open(args.gb_file) as file:
                 bold = (ref.split(":")[1]).split('.')[0]
         if args.txid:
             if txid not in txids:
+                continue
+        if args.skip:
+            if txid in skip:
                 continue
         spec = rec.annotations["organism"]
         # Replace the following characters: > < . ( ) ; : ' ,
