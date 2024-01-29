@@ -301,7 +301,7 @@ def findmax(x):
 with open("metadata.csv", "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
     writer.writerow(
-        ["FastaID", "Accession", "Taxon ID", 'BOLD', "Species", 'Gene', 'Length',
+        ["FastaID", "Accession", "TXID", 'BOLD', "Species", 'Gene', 'Length',
          "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
          "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal",
          "Ref2 Author", "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
