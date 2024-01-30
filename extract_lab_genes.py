@@ -32,7 +32,7 @@ def set_feat_name(feat, name):
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
-parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
+#parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-l', '--list', type=str, help="Limit to list of db_ids in file")
 
@@ -124,8 +124,8 @@ with open(args.gb_file) as file:
                         g += 1
                     else:
                         continue
-                if stdname not in mito:
-                    continue
+                #if stdname not in mito:
+                #    continue
                 if 'codon_start' in feature.qualifiers:
                     frame = feature.qualifiers["codon_start"]
                 else:
