@@ -13,6 +13,7 @@ def get_feat_name(feat):
         for t in nametags:
             if t in feat.qualifiers.keys():
                 featname = feat.qualifiers[t][0].upper()
+                featname = featname.replace(' ', '')
                 break
     return featname
 
@@ -42,8 +43,8 @@ suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
 mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LARGESUBUNITRIBOSOMALRNA", "LSU"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
          "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1', 'CYTOCHROME OXIDASE I', 'CYTOCHROME OXIDASE C SUBUNIT I'],
