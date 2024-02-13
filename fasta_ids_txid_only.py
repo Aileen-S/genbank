@@ -5,7 +5,7 @@ parser.add_argument("-i", "--input", type=str, help="in file")
 parser.add_argument("-o", "--output", type=str, help="out file")
 args = parser.parse_args()
 
-exceptions = ['con', 'lab', 'outgroup']
+exceptions = ['con_', 'lab_', 'outgroup_']
 
 file = open(args.input)
 output = open(args.output, 'w')
@@ -25,10 +25,11 @@ for line in lines:
             if x == 0:
                 for x in exceptions:
                     if x in line:
+                        print(line)
                         line = line.replace(x, '')
                 line = line.split('_')
+                print(line)
                 line = f'{line[0]}\n'
-                #print(line)
             line = f'>{line}'
     except IndexError:
         pass
