@@ -18,10 +18,10 @@ for line in lines:
             x = 0
             for n in name:
                 if not any(char.isalpha() for char in n):
-                    if len(n) > 4:
+                    if len(n) > 5:
                         line = f'{n}\n'
                         x =+ 1
-                        continue
+                        break
             if x == 0:
                 for x in exceptions:
                     if x in line:
