@@ -23,12 +23,10 @@ for line in lines:
                         x =+ 1
                         continue
             if x == 0:
-                print(line)
                 for x in exceptions:
                     if x in line:
                         line = line.replace(x, '')
                 line = line.split('_')
-                print(line)
                 line = f'{line[0]}\n'
                 #print(line)
             line = f'>{line}'
