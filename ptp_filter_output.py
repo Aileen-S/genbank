@@ -4,7 +4,8 @@ import argparse
 # Argument parser
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-i", "--input", type=str, help="mPTP output txt file")
-parser.add_argument("-m", "--meta", type=str, help="metadata file")
+parser.add_argument("-m", "--meta", type=str, help="metadata file (supermatrix_count.py output)")
+parser.add_argument("-k", "--keep", type=str, help="file with list of taxa to keep (eg constraint, outgroup)")
 parser.add_argument("-o", "--output", type=str, help="output file with filtered fasta IDs")
 
 args = parser.parse_args()
@@ -14,17 +15,34 @@ count = {}
 with open(args.meta) as file:
     metadata = csv.reader(file)
     for row in metadata:
-        count[row[0]] = int(row[5])
+        try:
+            count[row[0]] = int(row[2])
+        except ValueError:
+            continue
+
+keep = []
+if args.keep:
+    file = open(args.keep)
+    lines = file.readlines()
+    for line in lines:
+        keep.append(line.strip)
 
 file = open(args.input)
 
 # Save mPTP delimited species lists
 species_lists = []
 temp = []
+x = 0
 lines = file.readlines()
 for line in lines:
+    if 'Number of delimited species' in line:
+        print(line)
+    x += 1
+    if x < 10:
+        continue
+    if 'Species ' in line:
+        continue
     line = line.strip()
-    if 'Number of delimited species' in line: print(line)
     if line != '':
         temp.append(line)
     else:
@@ -35,20 +53,21 @@ species_lists.append(temp)
 # Get taxon with most genes in each species list
 chosen = []
 for species in species_lists:
-    gc = 0
-    ch = ''
+    nt = 0   # nucleotide count
+    ch = ''  # chosen taxon
     lab = 0
     for s in species:
-        if 'Species' in s:
-            continue
-        if len(s) <= 15:
+        if s in keep:
             chosen.append(s)
             lab = 1
         else:
-            if s in count:
-                if count[s] > gc:
-                    gc = count[s]
+            try:
+                if count[s] > nt:
+                    nt = count[s]
                     ch = s
+            except KeyError:
+                print(f'{s} is not in metadata')
+
     if lab == 0:
         chosen.append(ch)
 
