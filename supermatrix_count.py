@@ -4,9 +4,11 @@ import re
 from Bio import SeqIO
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Count number of genes and sequence length in supermatrix")
-parser.add_argument("-f", "--fasta", type=str, help="Input supermatrix")
+parser = argparse.ArgumentParser(description="Count number of genes and number of bases per gene in supermatrix")
+parser.add_argument("-f", "--fasta", type=str, help="Input supermatrix fasta")
 parser.add_argument("-p", "--partitions", type=str, help="Input partition file from catfasta2phyml")
+parser.add_argument("-o", "--output", type=str, help="Output csv file")
+
 
 args = parser.parse_args()
 
@@ -26,21 +28,25 @@ with open(args.partitions) as file:
 print(f'{len(genes)} genes in partition file')
 
 # Write CSV metadata file
-with open("count_genes.csv", "w") as file:     # Open output file
+with open(args.output, "w") as file:     # Open output file
     writer = csv.writer(file)               # Name writer object
-    writer.writerow(["Taxon", "Count"] + genes)  # Write column names
+    writer.writerow(["Taxon", "Total Genes", "Total Nucleotides"] + genes)  # Write column names
     records = SeqIO.parse(args.fasta, "fasta")
     x = 0
     for rec in records:
         x += 1
-        row = [rec.id, '']
+        row = [rec.id, '', '']
         total = 0
+        g = 0
         for gene in genes:
             # Count gaps in each gene
             gaps = rec.seq.count('-', parts[gene][0], parts[gene][1])
             length = parts[gene][2] - gaps
+            if length > 0:
+                g += 1
             row.append(length)
             total = total + length
-        row[1] = total
+        row[1] = g
+        row[2] = total
         writer.writerow(row)
-print(f'{x} taxa written to count_genes.csv')
+print(f'{x} taxa written to {args.output}')
