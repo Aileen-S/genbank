@@ -25,10 +25,8 @@ for line in lines:
             if x == 0:
                 for x in exceptions:
                     if x in line:
-                        print(line)
                         line = line.replace(x, '')
                 line = line.split('_')
-                print(line)
                 line = f'{line[0]}\n'
             line = f'>{line}'
     except IndexError:
