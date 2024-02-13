@@ -18,7 +18,7 @@ for line in lines:
             x = 0
             for n in name:
                 if not any(char.isalpha() for char in n):
-                    if len(n) > 5:
+                    if len(n) > 4:
                         line = f'{n}\n'
                         x =+ 1
                         continue
