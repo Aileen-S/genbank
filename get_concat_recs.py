@@ -176,15 +176,12 @@ for rec in record:
             unrec_species.append(rec.name)
             continue
     db_xref = rec.features[0].qualifiers["db_xref"]
+    bold = ''
     for ref in db_xref:
         if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
             txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
             if "BOLD" in ref:
                 bold = (ref.split(":")[1]).split('.')[0]
-        try:
-            bold
-        except NameError:
-            bold = ''
     spec = rec.annotations["organism"]
     # Replace the following characters: > < . ( ) ; : ' ,
     spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
@@ -192,7 +189,6 @@ for rec in record:
     specfasta = spec.replace(" ", "_")
     taxonomy = ['', '', '', '', '']
     for tax in rec.annotations["taxonomy"]:
-        print(tax)
         if tax in suborders: taxonomy[0] = tax
         if tax.endswith('oidea'): taxonomy[1] = tax
         if tax.endswith('idae'): taxonomy[2] = tax
