@@ -68,8 +68,8 @@ parser.add_argument('-m', '--mito', action='store_true', help='Save only mitocho
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LARGESUBUNITRIBOSOMALRNA", "LSU"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
          "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1', 'CYTOCHROME OXIDASE I', 'CYTOCHROME OXIDASE C SUBUNIT I'],
@@ -366,7 +366,7 @@ file = open("metadata.csv", "a")
 writer = csv.writer(file)
 for gene, records in longest.items():
     for output in records:
-        row = [f'{output['txid']}_{output['fastatax']}', output["gbid"], output["txid"], output["bold"], output["spec"]]
+        row = [f"{output['txid']}_{output['fastatax']}", output["gbid"], output["txid"], output["bold"], output["spec"]]
         for g in gen:
             if g == output['gene']:
                 row.append(output['length'])
