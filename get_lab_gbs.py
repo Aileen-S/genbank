@@ -4,7 +4,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Get lab mitogenome genbanks from ID list")
 parser.add_argument("-i", "--input", type=str, help="Input ID list file")
 parser.add_argument("-o", "--output", type=str, help="Name output file: default is <inputfile>.gb")
-parser.add_argument('-v', '--version', type=str, help='Database version, eg: gbmaster_2022-06-27')
+parser.add_argument('-v', '--version', type=str, help='Database version, eg: gbmaster_2023-10-29')
 
 args = parser.parse_args()
 
