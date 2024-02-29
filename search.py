@@ -35,13 +35,14 @@ for start in range(0, count, 1000):
 
 # Use GBIDs to download GenBank records
 z = 0
-for gbid_str in gbids:
-    print(f"Downloading GenBank records for taxon IDs {z + 1} to {z + 1000}" if (z + 1000) < count else
-          f"Downloading GenBank records for taxon IDs {z + 1} to {count}")
-    z += 1000
-    if z <= 24000:
-        continue
-    handle = Entrez.efetch(db="nucleotide", id=gbid_str, rettype="gb", retmode="text")
-    output.write(handle.read())
+with open(args.output, 'a') as file:
+    for gbid_str in gbids:
+        print(f"Downloading GenBank records for taxon IDs {z + 1} to {z + 1000}" if (z + 1000) < count else
+              f"Downloading GenBank records for taxon IDs {z + 1} to {count}")
+        z += 1000
+        #if z <= 24000:
+        #    continue
+        handle = Entrez.efetch(db="nucleotide", id=gbid_str, rettype="gb", retmode="text")
+        output.write(handle.read())
 print(f'Output saved to {args.output}')
 
