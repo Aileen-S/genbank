@@ -3,9 +3,7 @@
 
 import argparse
 import csv
-from Bio import Entrez
 from Bio import SeqIO
-import textwrap as _textwrap
 
 
 # Function definitions
@@ -253,6 +251,7 @@ with open(args.gb_file) as file:
                         print(f"Reading frame missing from record {rec.name}, {stdname}.")
                 else:
                     frame = ''
+            seq = ''
             seq = feature.extract(rec.seq)
             sequences.append(seq)
             output = {"gene": stdname,
