@@ -7,8 +7,7 @@ import argparse
 import csv
 from Bio import Entrez
 from Bio import SeqIO
-import textwrap as _textwrap
-
+from collections import Counter
 
 # Function definitions
 
@@ -99,7 +98,7 @@ cds = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4
 
 suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
-unrec_genes = set()
+unrec_genes = []
 unrec_species = []
 if args.email:
     Entrez.email = args.email
@@ -251,7 +250,7 @@ for rec in record:
                 stdname = k
                 g += 1
         if stdname == '':
-            unrec_genes.add(name)
+            unrec_genes.append(name)
             continue
         if args.mito:
             if stdname not in mito:
@@ -414,7 +413,8 @@ if args.file:
         print(f'\nNo requested genes found in the following records: {nohits}')
 
 print("\nUnrecognised Genes")
-print(f'{unrec_genes}\n')
+counter = Counter(unrec_genes)
+print(counter)
 print('Misc Features')
 print(misc_feature)
 print("Other Feature Types")
