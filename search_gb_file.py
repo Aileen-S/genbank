@@ -4,6 +4,7 @@
 import argparse
 import csv
 from Bio import SeqIO
+from collections import Counter
 
 
 # Function definitions
@@ -81,7 +82,7 @@ misc = ["similar to cytochrome oxidase subunit I", "similar to cytochrome oxidas
 
 suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
-unrec_genes = set()
+unrec_genes = []
 unrec_species = []
 misc_ids = []
 misc_sequences = []
@@ -235,7 +236,7 @@ with open(args.gb_file) as file:
                         stdname = k
                         g += 1
                 if stdname == '':
-                    unrec_genes.add(name)
+                    unrec_genes.append(name)
                     continue
                 if args.mito:
                     if stdname not in mito:
@@ -413,7 +414,8 @@ if args.accs:
         print(f'\nNo requested genes found in the following records: {nohits}')
 
 print("\nUnrecognised Genes")
-print(f'{unrec_genes}\n')
+counter = Counter(unrec_genes)
+print(counter)
 print('Misc Features')
 print(misc_feature)
 print("Other Feature Types")
