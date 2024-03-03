@@ -23,26 +23,25 @@ if args.names:
 
     records = SeqIO.parse(args.input, "fasta")
     for rec in records:
-        for rec in records:
-            new_id = rec.id
-            if ';frame==' in rec.id:
-                r_id, frame = rec.id.split(';')
-                for n in new:
-                    if r_id in n:
-                        new_id = f'{n};{frame}'
-                    elif rec.id == n:
-                        new_id = f'{n};{frame}'
+        new_id = rec.id
+        if ';frame==' in rec.id:
+            r_id, frame = rec.id.split(';')
+            for n in new:
+                if r_id in n:
+                    new_id = f'{n};{frame}'
+                elif rec.id == n:
+                    new_id = f'{n};{frame}'
 
-            else:
-                for n in new:
-                    if rec.id in n:
-                        new_id = n
-                    elif rec.id == n:
-                        new_id = n
-            if new_id in recs:
-                recs[new_id][rec.id] = rec.seq
-            else:
-                recs[new_id] = {rec.id: rec.seq}
+        else:
+            for n in new:
+                if rec.id in n:
+                    new_id = n
+                elif rec.id == n:
+                    new_id = n
+        if new_id in recs:
+            recs[new_id][rec.id] = rec.seq
+        else:
+            recs[new_id] = {rec.id: rec.seq}
 
 if args.csv:
     meta = {}
@@ -67,8 +66,11 @@ if args.csv:
         if new_id in recs:
             recs[new_id][rec.id] = rec.seq
         else:
-            recs[new_id] = {rec.id: rec.seq}# Check for duplicate names
+            recs[new_id] = {rec.id: rec.seq}
 
+
+# Check for duplicate names
+# Save longest sequence for duplicatesq
 selected = {}
 
 for new, old in recs.items():
@@ -80,14 +82,17 @@ for new, old in recs.items():
             max_len = len(v)
     selected[new] = max_rec
 
-id_list = open(args.renamed, 'w')
-id_list.write('New ID,Old ID,Sequence Length\n')
+
+
+if args.renamed:
+    id_list = open(args.renamed, 'w')
+    id_list.write('New ID,Old ID,Sequence Length\n')
+    print(f'Saved original IDs to {args.renamed}')
 output = open(args.output, 'w')
 for new, rec in selected.items():
     for old, seq in rec.items():
         output.write(f'>{new}\n{seq}\n')
-        id_list.write(f'{new},{old},{len(seq)}\n')
-
+        if args.renamed:
+            id_list.write(f'{new},{old},{len(seq)}\n')
 
 print(f'Saved renamed fasta to {args.output}')
-print(f'Saved original IDs to {args.renamed}')
