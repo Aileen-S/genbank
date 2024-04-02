@@ -167,11 +167,11 @@ with open(args.gb_file) as file:
             if args.fasta_id == 'txid':
                 f_id = txid
             if args.fasta_id == 'both':
-                f_id = f"{txid}/_{rec.name}/"
+                f_id = f"{txid}_{rec.name}"
             else:
-                f_id = f"{rec.name}/"
+                f_id = f"{rec.name}"
         else:
-            f_id = f"{rec.name}/"
+            f_id = f"{rec.name}"
         fasta_id = f'{f_id}_{fastatax}'
         if "country" in rec.features[0].qualifiers:
             location = rec.features[0].qualifiers["country"][0]
