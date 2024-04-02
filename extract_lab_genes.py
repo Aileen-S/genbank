@@ -153,34 +153,36 @@ writer.writerow(["db_id", "count"])
 for k, v in count.items():
     writer.writerow([k, v])
 
+rna = ['12S', '16S', '18S', '28S']
+
+
+
 for gene, records in species.items():
-    file = open(f"{gene}.fasta", "w")
-    rf = open(f"{gene}.fa", "w")
-    x = 0
-    y = 0
-    for rec in records:
-        if rec['frame'] == '':
-            fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
-        else:
+    if gene in rna:
+        file = open(f"{gene}.fasta", "w")
+        x = 0
+        for rec in records:
             fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
-
-        #c = count[rec['gbid']]
-        #if rec['txid'] == '':
-        #    if rec['frame'] == '':
-        #        fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
-        #    else:
-        #        fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
-
-        #else:
-        #    if rec['frame'] == '':
-        #        fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
-        #    else:
-        #        fasta_id = f">{rec['txid']}_{c}_{rec['gbid']}_{rec['fastatax']};frame={rec['frame'][0]}\n{rec['seq']}\n"
-        if 'frame' in fasta_id:
             file.write(fasta_id)
             x += 1
-        else:
-            rf.write(fasta_id)
-            y += 1
-    print(f'{x} records written to {gene}.fasta')
-    print(f'{y} records written to {gene}.fa')
+            print(f'{x} records written to {gene}.fasta')
+
+    else:
+        file = open(f"{gene}.fasta", "w")
+        rf = open(f"{gene}.fa", "w")
+        x = 0
+        y = 0
+        for rec in records:
+            if rec['frame'] == '':
+                fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
+            else:
+                fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
+
+            if 'frame' in fasta_id:
+                file.write(fasta_id)
+                x += 1
+            else:
+                rf.write(fasta_id)
+                y += 1
+        print(f'{x} records written to {gene}.fasta')
+        print(f'{y} records without reading frame written to {gene}.fa')
