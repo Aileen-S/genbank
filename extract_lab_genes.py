@@ -162,10 +162,10 @@ for gene, records in species.items():
         file = open(f"{gene}.fasta", "w")
         x = 0
         for rec in records:
-            fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
+            fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
             file.write(fasta_id)
             x += 1
-            print(f'{x} records written to {gene}.fasta')
+        print(f'{x} records written to {gene}.fasta')
 
     else:
         file = open(f"{gene}.fasta", "w")
