@@ -9,6 +9,7 @@ parser.add_argument("-c", "--csv", type=str, help="CSV file, new names in first 
 parser.add_argument("-o", "--output", type=str, help="Output fasta file")
 parser.add_argument("-r", "--renamed", type=str, help="Output csv with old and new names")
 
+
 args = parser.parse_args()
 
 recs = {}
@@ -54,7 +55,7 @@ if args.csv:
     output = open(args.output, 'w')
     for rec in records:
         new_id = rec.id
-        if ';frame==' in rec.id:
+        if ';frame=' in rec.id:
             r_id, frame = rec.id.split(';')
             for k, v in meta.items():
                 if r_id == k:
@@ -70,8 +71,9 @@ if args.csv:
 
 
 # Check for duplicate names
-# Save longest sequence for duplicatesq
+# Save longest sequence for duplicates
 selected = {}
+removed = {}
 
 for new, old in recs.items():
     max_len = 0
@@ -80,19 +82,27 @@ for new, old in recs.items():
         if len(v) > max_len:
             max_rec = {k: v}
             max_len = len(v)
+        else:
+            removed[new] = k
     selected[new] = max_rec
 
-
+#print(f'Removed shorter sequences from duplicate IDs: {removed}')
 
 if args.renamed:
-    id_list = open(args.renamed, 'w')
-    id_list.write('New ID,Old ID,Sequence Length\n')
+    with open(args.renamed, 'w') as id_list:
+        writer = csv.writer(id_list)
+        writer.writerow(['Old ID', 'New ID', 'Removed'])
+        for new, rec in selected.items():
+            for old, seq in rec.items():
+                writer.writerow([old, new])
+        for new, old in removed.items():
+            writer.writerow([old, new, 'yes'])
     print(f'Saved original IDs to {args.renamed}')
+
+
 output = open(args.output, 'w')
 for new, rec in selected.items():
     for old, seq in rec.items():
         output.write(f'>{new}\n{seq}\n')
-        if args.renamed:
-            id_list.write(f'{new},{old},{len(seq)}\n')
 
 print(f'Saved renamed fasta to {args.output}')
