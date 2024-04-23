@@ -26,7 +26,7 @@ sub = {'Agabinae': {'total': 426, 'count': 0, 'fraction': 0},
        'Lancetinae': {'total': 22, 'count': 0, 'fraction': 0},
        'Matinae': {'total': 9, 'count': 0, 'fraction': 0}}
 
-tribe = {'Aciliini': {'total': 70, 'count': 0, 'fraction': 0},
+tri = {'Aciliini': {'total': 70, 'count': 0, 'fraction': 0},
          'Agabetini': {'total': 2, 'count': 0, 'fraction': 0},
          'Agabini': {'total': 338, 'count': 0, 'fraction': 0},
          'Aubehydrini': {'total': 2, 'count': 0, 'fraction': 0},
@@ -53,7 +53,7 @@ tribe = {'Aciliini': {'total': 70, 'count': 0, 'fraction': 0},
          'Platynectini': {'total': 86, 'count': 0, 'fraction': 0},
          'Vatellini': {'total': 59, 'count': 0, 'fraction': 0},
          'Deronectina': {'total': 197, 'count': 0, 'fraction': 0},
-         'Hydroporina': {'total': 282, 'count': 0, 'fraction': 0},
+         'Hydroporina_': {'total': 282, 'count': 0, 'fraction': 0},
          'Siettitiina': {'total': 59, 'count': 0, 'fraction': 0},
          'Sternopriscina': {'total': 155, 'count': 0, 'fraction': 0}}
 
@@ -172,61 +172,84 @@ gen = {'Agabinus': {'total': 2, 'count': 0, 'fraction': 0}, 'Agabus': {'total': 
 
 parser = argparse.ArgumentParser(description="Write file with sample fraction by genus or subfamily")
 parser.add_argument("-i", "--input", type=str, help="Text file containing list of taxon names")
-parser.add_argument("-t", "--taxonomy", action="store_true", help="Specify level of taxonomy")
+parser.add_argument("-t", "--taxonomy", type=str, help="Specify level of taxonomy")
+parser.add_argument("-o", "--output", type=str, help="Output BAMM file")
+
+
 args = parser.parse_args()
 
-output = open(f'{args.input}.out', 'w')
-output.write('1.0\n')
 file = open(args.input)
 lines = file.readlines()
+taxa = {}
+for line in lines:
+    line = line.strip()
+    tax = line
+    taxa[line] = tax
+    # Check each subgenus in the dictionary
+    for key, values in subgen.items():
+        # Replace each value with the corresponding key
+        for value in values:
+            tax = tax.replace(value, key)
+    # Append modified or original line to list
+    taxa[line] = tax
 
 # Count taxa in each taxonomic group
-for line in lines:
-    line = [line.strip()]
+count = 0
+for line, tax in taxa.items():
     if args.taxonomy == 'subfamily':
         for subfamily, data in sub.items():
-            if subfamily in line[0]:
+            if subfamily in tax:
                 data['count'] += 1
+                count += 1
     if args.taxonomy == 'tribe':
-        for tribe, data in tribe.items():
-            if tribe in line[0]:
+        for tribe, data in tri.items():
+            if tribe in tax:
                 data['count'] += 1
+                count += 1
     if args.taxonomy == 'genus':
-        for key, value in subgen.items():
-            for v in value:
-                if v in line[0]:
-                    line[0] = line[0].replace(v, key)
         for genus, data in gen.items():
-            if genus in line[0]:
+            if genus in tax:
                 data['count'] += 1
+                count += 1
+
+# Global sampling fraction
+glob = round(count/4615, 3)
 
 # Round fraction and write to BAMM file
 if args.taxonomy == 'subfamily':
     for subfamily, data in sub.items():
         data['fraction'] = round(data['count'] / data['total'], 3)
+        if data['fraction'] > 1:
+            data['fraction'] = 1
 if args.taxonomy == 'tribe':
-    for tribe, data in tribe.items():
+    for tribe, data in tri.items():
         data['fraction'] = round(data['count'] / data['total'], 3)
+        if data['fraction'] > 1:
+            data['fraction'] = 1
 if args.taxonomy == 'genus':
     for genus, data in gen.items():
         data['fraction'] = round(data['count'] / data['total'], 3)
+        if data['fraction'] > 1:
+            data['fraction'] = 1
 
 # Add fraction to line for BAMM file
-for line in lines:
-    line = [line.strip()]
-    if args.taxonomy == 'subfamily':
-        for subfamily, data in sub.items():
-            if subfamily in line[0]:
-                line = line + [subfamily, str(data['fraction'])]
-    if args.taxonomy == 'tribe':
-        for tribe, data in tribe.items():
-            if tribe in line[0]:
-                line = line + [tribe, str(data['fraction'])]
-    if args.taxonomy == 'genus':
-        for genus, data in gen.items():
-            if genus in line[0]:
-                line = line + [genus, str(data['fraction'])]
-    if len(line) <= 1:
-        line = line + ['Outgroup', '1']
-    output.write('\t'.join(line) + '\n')
-    print('\t'.join(line) + '\n')
+with open(args.output, 'w') as output:
+    output.write(f'{glob}\n')
+    for line, tax in taxa.items():
+        out = ''
+        if args.taxonomy == 'subfamily':
+            for subfamily, data in sub.items():
+                if subfamily in tax:
+                    out = f'{line}\t{subfamily}\t{data["fraction"]}'
+        if args.taxonomy == 'tribe':
+            for tribe, data in tri.items():
+                if tribe in tax:
+                    out = f'{line}\t{tribe}\t{data["fraction"]}'
+        if args.taxonomy == 'genus':
+            for genus, data in gen.items():
+                if genus in tax:
+                    out = f'{line}\t{genus}\t{data["fraction"]}'
+        if out == '':
+            out = f'{line}\tOutgroup\t1'
+        output.write(out + '\n')
+        #print('\t'.join(line) + '\n')
