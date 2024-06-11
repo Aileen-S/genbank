@@ -30,7 +30,7 @@ if args.sequence_type == 'aa':
         if any(r in start[1] for r in rrna):    # Check for rRNA genes
             start[0] = 'DNA'
         else:
-            start[0] = 'mtART'
+            start[0] = 'PROT'
         if args.output == 'raxml':
             outputaa.write(f'{start[0]}, {start[1]}={split[1]}\n')
         if args.output == 'nexus':
