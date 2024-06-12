@@ -63,6 +63,8 @@ parser.add_argument('-r', '--ref', choices=['txid', 'gbid'], help="If using --fi
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
+parser.add_argument('-c', '--coi', action='store_true', help='Save only COX1')
+
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
@@ -254,6 +256,9 @@ for rec in record:
             continue
         if args.mito:
             if stdname not in mito:
+                continue
+        if args.coi:
+            if stdname != 'COX1':
                 continue
         if stdname in cds:
             if 'codon_start' in feature.qualifiers:
