@@ -109,6 +109,7 @@ with open(args.gb_file) as file:
                 if tax.endswith('inae'): taxonomy[3] = tax
                 if tax.endswith('ini'): taxonomy[4] = tax
             taxonomy.append(spec.split(' ')[0])
+            fastatax = ""
             fastatax = f"{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
         except KeyError:
             print(f'No taxonomy for {rec.name}')
