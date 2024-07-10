@@ -12,14 +12,14 @@ from collections import Counter
 # Function definitions
 
 def get_feat_name(feat):
-    featname = "unknown"
+    featnames = []
     nametags = ['gene', 'product', 'label', 'standard_name']  # Search these four keys for gene name
     if any(t in feat.qualifiers.keys() for t in nametags):
         for t in nametags:
             if t in feat.qualifiers.keys():
                 featname = feat.qualifiers[t][0].upper()
-                break
-    return featname
+                featnames.append(featname)
+    return featnames
 
 
 def set_feat_name(feat, name):
@@ -64,13 +64,15 @@ parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
 parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
 parser.add_argument('-c', '--coi', action='store_true', help='Save only COX1')
+parser.add_argument("-g", "--gene", type=str, help="Save specified gene only")
+
 
 
 args = parser.parse_args()         # Process input args from command line
 #args = argparse.Namespace(taxon='Amphizoidae', mpc=True, email='aileen.scott@nhm.ac.uk', nuclear=False) # This is how I step through the script interactively
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LSU"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "SSU"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "LSU"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
          "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1', 'CYTOCHROME OXIDASE I', 'CYTOCHROME OXIDASE C SUBUNIT I'],
@@ -245,20 +247,21 @@ for rec in record:
             else:
                 other_type.add(type)
             continue
-        name = get_feat_name(feature)                       # Find gene name
+        names = get_feat_name(feature)                       # Find gene name
         stdname = ""
         for k, v in genes.items():
-            if name in v:
-                stdname = k
-                g += 1
+            for name in names:
+                if name in v:
+                    stdname = k
+                    g += 1
         if stdname == '':
             unrec_genes.append(name)
             continue
         if args.mito:
             if stdname not in mito:
                 continue
-        if args.coi:
-            if stdname != 'COX1':
+        if args.gene:
+            if stdname != args.gene:
                 continue
         if stdname in cds:
             if 'codon_start' in feature.qualifiers:
@@ -385,8 +388,6 @@ for gene, records in longest.items():
         row.append(output["long"])
         row.extend(output["refs"])
         writer.writerow(row)
-
-
 
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
