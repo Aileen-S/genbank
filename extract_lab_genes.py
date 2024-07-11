@@ -7,15 +7,14 @@ from Bio import SeqIO
 # Function definitions
 
 def get_feat_name(feat):
-    featname = "unknown"
+    featnames = []
     nametags = ['gene', 'product', 'label', 'standard_name']  # Search these four keys for gene name
     if any(t in feat.qualifiers.keys() for t in nametags):
         for t in nametags:
             if t in feat.qualifiers.keys():
                 featname = feat.qualifiers[t][0].upper()
-                featname = featname.replace(' ', '')
-                break
-    return featname
+                featnames.append(featname)
+    return featnames
 
 
 def set_feat_name(feat, name):
@@ -43,8 +42,8 @@ suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
 mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LARGESUBUNITRIBOSOMALRNA", "LSU"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "SSU"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "LARGESUBUNITRIBOSOMALRNA", "LSU"],
          "ATP6": ['ATP SYNTHASE F0 SUBUNIT 6', 'APT6', 'ATP SYNTHASE A0 SUBUNIT 6', 'ATP SYNTHASE SUBUNIT 6', 'ATP SYNTHASE FO SUBUNIT 6', 'ATPASE6', 'ATPASE SUBUNIT 6', 'ATP6'],
          "ATP8": ['ATP SYNTHASE F0 SUBUNIT 8', 'APT8', 'ATP SYNTHASE A0 SUBUNIT 8', 'ATP SYNTHASE SUBUNIT 8', 'ATP SYNTHASE FO SUBUNIT 8', 'ATPASE8', 'ATPASE SUBUNIT 8', 'ATP8'],
          "COX1": ['CYTOCHROME C OXIDASE SUBUNIT 1', 'CYTOCHROME OXIDASE SUBUNIT I', 'CYTOCHROME C OXIDASE SUBUNIT I', 'COXI', 'CO1', 'COI', 'CYTOCHROME COXIDASE SUBUNIT I', 'CYTOCHROME OXIDASE SUBUNIT 1', 'CYTOCHROME OXYDASE SUBUNIT 1', 'COX1', 'CYTOCHROME OXIDASE I', 'CYTOCHROME OXIDASE C SUBUNIT I'],
@@ -76,8 +75,9 @@ if args.list:
 
 
 # Search through GBIDs
+unrec_genes = []
 species = {}
-count = {}
+#count = {}
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
@@ -115,22 +115,22 @@ with open(args.gb_file) as file:
         for feature in rec.features:
             type = feature.type
             if type in ('CDS', 'rRNA'):
-                name = get_feat_name(feature)                       # Find gene name
-                stdname = ""
+                names = get_feat_name(feature)                       # Find gene name
+                stdname = "none"
                 for k, v in genes.items():
-                    if name in v:
-                        stdname = k
-                        g += 1
-                    else:
-                        continue
-                #if stdname not in mito:
-                #    continue
+                    for name in names:
+                        if name in v:
+                            stdname = k
+                            g += 1
+                if stdname == 'none':
+                    unrec_genes.append(name)
                 if 'codon_start' in feature.qualifiers:
                     frame = feature.qualifiers["codon_start"]
                 else:
                     frame = ''
                 seq = feature.extract(rec.seq)
                 output = {"gene": stdname,
+                          "names": names,
                           "gbid": rec.name,
                           "txid": txid,
                           "description": rec.description,
@@ -143,13 +143,18 @@ with open(args.gb_file) as file:
                     species[stdname].append(output)
                 else:
                     species[stdname] = [output]
-        count[rec.name] = g
+        #count[rec.name] = g
 
 meta = open("metadata.csv", "w")
 writer = csv.writer(meta)
-writer.writerow(["db_id", "count"])
-for k, v in count.items():
-    writer.writerow([k, v])
+writer.writerow(["db_id", "Species", "Gene", "Annotation", "Length", "Suborder", "Superfamily", "Family",
+                 "Subfamily", "Tribe", 'Genus', "Description"])
+for gene, records in species.items():
+    for rec in records:
+        row = [rec['gbid'], rec['spec'], rec['gene'], rec['names'], rec['length']]
+        row.extend(rec['taxonomy'])
+        row.append(rec['description'])
+        writer.writerow(row)
 
 rna = ['12S', '16S', '18S', '28S']
 
