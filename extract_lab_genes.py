@@ -111,6 +111,12 @@ with open(args.gb_file) as file:
             taxonomy.append(spec.split(' ')[0])
         except KeyError:
             print(f'No taxonomy for {rec.name}')
+        refs = []
+        if "references" in rec.annotations:
+            for ref in rec.annotations["references"]:
+                refs.append(ref.authors)
+                refs.append(ref.title)
+                refs.append(ref.journal)
         g = 0
         for feature in rec.features:
             type = feature.type
@@ -138,7 +144,8 @@ with open(args.gb_file) as file:
                           "taxonomy": taxonomy,
                           "length": len(seq),
                           "seq": seq,
-                          "frame": frame}
+                          "frame": frame,
+                          "refs": refs}
                 if stdname in species:
                     species[stdname].append(output)
                 else:
@@ -154,6 +161,7 @@ for gene, records in species.items():
         row = [rec['gbid'], rec['spec'], rec['gene'], rec['names'], rec['length']]
         row.extend(rec['taxonomy'])
         row.append(rec['description'])
+        row.extend(rec['refs'])
         writer.writerow(row)
 
 rna = ['12S', '16S', '18S', '28S']
