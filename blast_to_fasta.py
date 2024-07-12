@@ -2,8 +2,7 @@ import argparse
 from Bio import Entrez
 from Bio import SeqIO
 import csv
-#import time
-#from urllib.error import HTTPError
+import time
 
 
 parser = argparse.ArgumentParser(description="Rename sequences in fasta file from CSV.")
@@ -14,9 +13,8 @@ parser.add_argument("-e", "--email", type=str, help="Your email address for NCBI
 
 args = parser.parse_args()
 
-import time
 
-
+# Search GenBank, wait and try again if 'too many requests' error
 def search_genbank(ids):
     for attempt in range(1, 10):
         try:
@@ -24,13 +22,15 @@ def search_genbank(ids):
             results = SeqIO.parse(handle, "gb")
             return results
         except Entrez.HTTPError:
-            print(f"Attempt {attempt+1}: HTTP error fetching records. Sleeping for 20 seconds and retrying.")
+            print("HTTP error fetching records; retry in 20 seconds")
             time.sleep(20)
     print(f"Failed to retrieve records after 10 attempts.")
     return None
 
 Entrez.email = args.email
 
+# Save records in dict goruped by TXID
+print(f'Finding longest sequence for each NCBI taxon ID in {args.input}')
 records = {}
 x = 0
 with open(args.input, "r") as file:
@@ -58,6 +58,7 @@ with open(args.input, "r") as file:
 print(f'{x} records in {args.input}')
 print(f'{len(records)} unique taxon IDs')
 
+# Find longest sequence for each TXID
 longest = {}
 gbids = []
 for txid, recs in records.items():
@@ -69,12 +70,14 @@ for txid, recs in records.items():
     longest[txid] = {gbid: seq}
     gbids.append(chosen)
 
+# Write fasta
 with open(args.output, 'w') as output:
     for txid, rec in longest.items():
         for gbid, seq in rec.items():
             output.write(f'>{txid}_{gbid}\n{seq}\n')
 print(f'Saved longest sequences to {args.output}')
 
+# Get metadata
 if args.metadata:
     print(f'Searching NCBI for metadata')
     suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
