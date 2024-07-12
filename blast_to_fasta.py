@@ -2,6 +2,9 @@ import argparse
 from Bio import Entrez
 from Bio import SeqIO
 import csv
+#import time
+#from urllib.error import HTTPError
+
 
 parser = argparse.ArgumentParser(description="Rename sequences in fasta file from CSV.")
 parser.add_argument("-i", "--input", type=str, help="Input BLAST result ( -outfmt '6 staxids sacc sseq')")
@@ -10,6 +13,21 @@ parser.add_argument("-m", "--metadata", type=str, help="Optional output CSV file
 parser.add_argument("-e", "--email", type=str, help="Your email address for NCBI, to get metadata")
 
 args = parser.parse_args()
+
+import time
+
+
+def search_genbank(ids):
+    for attempt in range(1, 10):
+        try:
+            handle = Entrez.efetch(db="nucleotide", id=ids, rettype="gb", retmode="text")
+            records = SeqIO.parse(handle, "gb")
+            return records
+        except Entrez.HTTPError:
+            print(f"Attempt {attempt+1}: HTTP error fetching records. Sleeping for 10 seconds and retrying...")
+            time.sleep(20)
+    print(f"Failed to retrieve records after 10 attempts.")
+    return None
 
 Entrez.email = args.email
 
@@ -63,9 +81,9 @@ if args.metadata:
     suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
     metadata = []
     accstr = ",".join(gbids)
-    handle = Entrez.efetch(db="nucleotide", id=accstr, rettype="gb", retmode="text")
-    record = SeqIO.parse(handle, "gb")
-    for rec in record:
+    records = search_genbank(accstr)
+    for rec in records:
+        print(rec.name)
         db_xref = rec.features[0].qualifiers["db_xref"]
         bold = ''
         for ref in db_xref:
