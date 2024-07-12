@@ -24,6 +24,16 @@ with open(args.input, "r") as file:
         txid = record[0]
         gbid = record[1]
         seq = record[2]
+
+        # Check for multiple TXIDs
+        if ';' in txid:
+            handle = Entrez.efetch(db="nucleotide", id=gbid, rettype="gb", retmode="text")
+            record = SeqIO.parse(handle, "gb")
+            for r in record:
+                db_xref = r.features[0].qualifiers["db_xref"]
+                for ref in db_xref:
+                    if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
+                        txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
         if txid not in records:
             records[txid] = {gbid: seq}
         else:
@@ -41,19 +51,6 @@ for txid, recs in records.items():
             chosen = gbid
     longest[txid] = {gbid: seq}
     gbids.append(chosen)
-
-# Check for duplicate TXIDs
-for txid, rec in longest.items():
-    if ';' in txid:
-        for k, v in rec.items():
-            gbid = k
-        handle = Entrez.efetch(db="nucleotide", id=gbid, rettype="gb", retmode="text")
-        record = SeqIO.parse(handle, "gb")
-        for r in record:
-            db_xref = r.features[0].qualifiers["db_xref"]
-            for ref in db_xref:
-                if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
-                    txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
 
 with open(args.output, 'w') as output:
     for txid, rec in longest.items():
@@ -120,10 +117,10 @@ if args.metadata:
             c_date = ""
         refs = []
         if "references" in rec.annotations:
-            for ref in rec.annotations["references"]:
-                refs.append(ref.authors)
-                refs.append(ref.title)
-                refs.append(ref.journal)
+            first = rec.annotations['references'][0]
+            refs.append(first.authors)
+            refs.append(first.title)
+            refs.append(first.journal)
         else:
             continue
         output = {"gbid": rec.name,
@@ -144,11 +141,9 @@ if args.metadata:
 
     with open(args.metadata, "w") as output:
         writer = csv.writer(output)  # Name writer object
-        writer.writerow(justjust
-            ["FastaID", "Taxon ID", "Accession", "Species", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
-             "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title",
-             "Ref1 Journal", "Ref2 Author",
-             "Ref2 Title", "Ref2 Journal", "Ref3 Author", "Ref3 Title", "Ref3 Journal"])
+        writer.writerow(["FastaID", "Taxon ID", "Accession", "Species", "Suborder", "Superfamily", "Family",
+                         "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified", "Date Collected",
+                         "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title", "Ref1 Journal"])
         for output in metadata:
             row = [f"{output['txid']}_{output['fastatax']}", output["txid"], output["gbid"],
                    output["spec"]]
@@ -163,4 +158,4 @@ if args.metadata:
             row.append(output["long"])
             row.extend(output["refs"])
             writer.writerow(row)
-print(f'Saved metadata to {args.metadata}')
+    print(f'Saved metadata to {args.metadata}')
