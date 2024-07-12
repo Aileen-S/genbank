@@ -30,7 +30,6 @@ def search_genbank(ids):
 Entrez.email = args.email
 
 # Save records in dict goruped by TXID
-print(f'Finding longest sequence for each NCBI taxon ID in {args.input}')
 records = {}
 x = 0
 with open(args.input, "r") as file:
@@ -56,9 +55,10 @@ with open(args.input, "r") as file:
         else:
             records[txid][gbid] = seq
 print(f'{x} records in {args.input}')
-print(f'{len(records)} unique taxon IDs')
+print(f'{len(records)} unique NCBI taxon IDs')
 
 # Find longest sequence for each TXID
+print(f'Finding longest sequence for each NCBI taxon ID')
 longest = {}
 gbids = []
 for txid, recs in records.items():
