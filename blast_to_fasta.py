@@ -21,10 +21,10 @@ def search_genbank(ids):
     for attempt in range(1, 10):
         try:
             handle = Entrez.efetch(db="nucleotide", id=ids, rettype="gb", retmode="text")
-            records = SeqIO.parse(handle, "gb")
-            return records
+            results = SeqIO.parse(handle, "gb")
+            return results
         except Entrez.HTTPError:
-            print(f"Attempt {attempt+1}: HTTP error fetching records. Sleeping for 10 seconds and retrying...")
+            print(f"Attempt {attempt+1}: HTTP error fetching records. Sleeping for 20 seconds and retrying.")
             time.sleep(20)
     print(f"Failed to retrieve records after 10 attempts.")
     return None
@@ -45,9 +45,8 @@ with open(args.input, "r") as file:
 
         # Check for multiple TXIDs
         if ';' in txid:
-            handle = Entrez.efetch(db="nucleotide", id=gbid, rettype="gb", retmode="text")
-            record = SeqIO.parse(handle, "gb")
-            for r in record:
+            results = search_genbank(gbid)
+            for r in results:
                 db_xref = r.features[0].qualifiers["db_xref"]
                 for ref in db_xref:
                     if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
@@ -81,9 +80,8 @@ if args.metadata:
     suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
     metadata = []
     accstr = ",".join(gbids)
-    records = search_genbank(accstr)
-    for rec in records:
-        print(rec.name)
+    results = search_genbank(accstr)
+    for rec in results:
         db_xref = rec.features[0].qualifiers["db_xref"]
         bold = ''
         for ref in db_xref:
