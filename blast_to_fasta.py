@@ -5,11 +5,13 @@ import csv
 
 parser = argparse.ArgumentParser(description="Rename sequences in fasta file from CSV.")
 parser.add_argument("-i", "--input", type=str, help="Input BLAST result ( -outfmt '6 staxids sacc sseq')")
-parser.add_argument("-o", "--output", type=str, help="Output csv with old and new names")
+parser.add_argument("-o", "--output", type=str, help="Output fasta")
 parser.add_argument("-m", "--metadata", type=str, help="Optional output CSV file to get metadata")
-parser.add_argument("-e", "--email", type=str, help="Your email address for NCBI")
+parser.add_argument("-e", "--email", type=str, help="Your email address for NCBI, to get metadata")
 
 args = parser.parse_args()
+
+Entrez.email = args.email
 
 records = {}
 x = 0
@@ -40,15 +42,27 @@ for txid, recs in records.items():
     longest[txid] = {gbid: seq}
     gbids.append(chosen)
 
+# Check for duplicate TXIDs
+for txid, rec in longest.items():
+    if ';' in txid:
+        for k, v in rec.items():
+            gbid = k
+        handle = Entrez.efetch(db="nucleotide", id=gbid, rettype="gb", retmode="text")
+        record = SeqIO.parse(handle, "gb")
+        for r in record:
+            db_xref = r.features[0].qualifiers["db_xref"]
+            for ref in db_xref:
+                if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
+                    txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
+
 with open(args.output, 'w') as output:
     for txid, rec in longest.items():
         for gbid, seq in rec.items():
             output.write(f'>{txid}_{gbid}\n{seq}\n')
 print(f'Saved longest sequences to {args.output}')
-print(f'Searching NCBI for metadata')
 
 if args.metadata:
-    Entrez.email = args.email
+    print(f'Searching NCBI for metadata')
     suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
     metadata = []
     accstr = ",".join(gbids)
@@ -130,7 +144,7 @@ if args.metadata:
 
     with open(args.metadata, "w") as output:
         writer = csv.writer(output)  # Name writer object
-        writer.writerow(
+        writer.writerow(justjust
             ["FastaID", "Taxon ID", "Accession", "Species", "Suborder", "Superfamily", "Family", "Subfamily", "Tribe", 'Genus', "Description", "Date Late Modified",
              "Date Collected", "Country", "Region", "Lat/Long", "Lat", "Long", "Ref1 Author", "Ref1 Title",
              "Ref1 Journal", "Ref2 Author",
