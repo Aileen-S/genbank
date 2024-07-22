@@ -1,16 +1,25 @@
 from Bio import Entrez
 import csv
 import argparse
+import time
 
-
+# Get species names from TXID list
 def fetch_species_names(taxon_ids):
     taxon_data = []
     
     for taxon_id in taxon_ids:
-        handle = Entrez.efetch(db="taxonomy", id=taxon_id, retmode="xml")
-        records = Entrez.read(handle)
-        handle.close()
-        
+        for attempt in range(1, 10):
+            try:
+                handle = Entrez.efetch(db="taxonomy", id=taxon_id, retmode="xml")
+                records = Entrez.read(handle)
+                handle.close()
+            except Entrez.HTTPError:
+                print("HTTP error fetching records; retry in 20 seconds")
+                time.sleep(20)
+            else:
+                break
+        else: 
+            'Failed to retrieve records. Try again later.'
         if records:
             species_binomial = records[0]["ScientificName"]
             rank = records[0]["Rank"]
@@ -40,9 +49,11 @@ for line in lines:
     taxids.append(taxid)
 print(f'{len(taxids)} IDs found in {args.input}')
 
+taxids = ['3029442', '3031963', '3039960', '3046642', '3048115', '3053695', '3053696', '3078427']
 
 # Fetch species names
 taxon_data = fetch_species_names(taxids)
+print(taxon_data)
 
 # Write to CSV
 with open(args.output, "w") as output:
