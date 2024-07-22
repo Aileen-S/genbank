@@ -13,7 +13,8 @@ def fetch_species_names(taxon_ids):
         
         if records:
             species_binomial = records[0]["ScientificName"]
-            taxon_data.append((taxon_id, species_binomial))
+            rank = records[0]["Rank"]
+            taxon_data.append((taxon_id, species_binomial, rank))
         else:
             taxon_data.append((taxon_id, "Not Found"))
     
@@ -46,7 +47,7 @@ taxon_data = fetch_species_names(taxids)
 # Write to CSV
 with open(args.output, "w") as output:
     csvwriter = csv.writer(output)
-    csvwriter.writerow(["ncbi_taxid", "species"])
+    csvwriter.writerow(["ncbi_taxid", "species", "rank"])
     csvwriter.writerows(taxon_data)
 
 print(f"Printed output to {args.output}")
