@@ -32,12 +32,12 @@ Entrez.email = args.input
 
 
 taxids = []
-file = open(args.file)
+file = open(args.input)
 lines = file.readlines()
 for line in lines:
     taxid = line.strip()
     taxids.append(taxid)
-print(f'{len(taxids)} IDs found in {args.inout}')
+print(f'{len(taxids)} IDs found in {args.input}')
 
 
 # Fetch species names
