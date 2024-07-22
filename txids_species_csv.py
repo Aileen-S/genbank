@@ -22,7 +22,7 @@ def fetch_species_names(taxon_ids):
 
 parser = argparse.ArgumentParser(description="Get csv with txids and binomials")
 parser.add_argument("-e", "--email", type=str, help="Your email registered with NCBI")
-parser.add_argument('-i', '--input', action='store_true', help='file with NCBI taxon ID list')
+parser.add_argument('-i', '--input', action=str, help='file with NCBI taxon ID list')
 parser.add_argument("-o", "--output", type=str, help="Output csv")
 
 args = parser.parse_args()
