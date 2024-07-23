@@ -51,7 +51,7 @@ def genbank_metadata(rec):
         if tax.endswith('idae'): taxonomy[3] = tax
         if tax.endswith('inae'): taxonomy[4] = tax
         if tax.endswith('ini'): taxonomy[5] = tax
-    taxonomy.append(spec.split(' ')[0])
+    #taxonomy.append(spec.split(' ')[0])
     #fastatax = f"{txid}_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
 
     # Location
@@ -121,8 +121,8 @@ parser.add_argument('-s', '--skip', type=str, help="File with list of GBIDs to a
 argcomplete.autocomplete(parser)
 args = parser.parse_args()
 
-genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU", "RRN12", "12S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
-         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LSU", "RRN16", "16S LARGE SUBUNIT RIBOSOMAL RNA", "LARGE SUBUNIT RIBOSOMAL RNA"],
+genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "RRNS", "SSU", "RRN12", "S-RRNA", "12S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
+         "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "RRNL", "LSU", "RRN16", "L-RRNA", "16S LARGE SUBUNIT RIBOSOMAL RNA", "LARGE SUBUNIT RIBOSOMAL RNA"],
          "18S": ["18S", "18S RIBOSOMAL RNA", "18S RRNA", "18S SMALL SUBUNIT RIBOSOMAL RNA", "SMALL SUBUNIT RIBOSOMAL RNA"],
          "28S": ["28S", "28S RIBOSOMAL RNA", "28S RRNA", "28S LARGE SUBUNIT RIBOSOMAL RNA", "LARGE SUBUNIT RIBOSOMAL RNA"],
 
@@ -238,7 +238,7 @@ with open(args.gb_file) as file:
                     if 'codon_start' in feature.qualifiers:
                         frame = feature.qualifiers["codon_start"][0]
                     else:
-                        frame = ['']
+                        frame = ''
                         #print(f"Reading frame missing from record {rec.name}, {stdname}.")
                 else:
                     frame = ''
@@ -282,8 +282,6 @@ def findmax(x):
 
 # Dict for longest sequences, key is gene stdname, value is list of records
 longest = {}
-gbids = []
-meta = []
 for tax, stdname in species.items():
     for gene, records in stdname.items():
         # Get longest sequence for each taxon ID, for each gene
@@ -293,9 +291,6 @@ for tax, stdname in species.items():
                 longest[gene].append(chosen)
             else:
                 longest[gene] = [chosen]
-            if chosen['gbid'] not in gbids:
-                gbids.append(chosen['gbid'])
-                meta.append(chosen)
         # Keep all sequences
         else:
             for record in records:
@@ -303,20 +298,20 @@ for tax, stdname in species.items():
                     longest[gene].append(record)
                 else:
                     longest[gene] = [record]
-                if record['gbid'] not in gbids:
-                    gbids.append(record['gbid'])
-                    meta.append(record)
 
 # Write CSV metadata file
-with open("metadata.csv", "w") as file:     # Open output file
-    writer = csv.writer(file)               # Name writer object
+gbids = []
+with open("metadata.csv", "w") as file:
+    writer = csv.writer(file)
     writer.writerow(
         ["ncbi_taxid", "genbank_accession", "bold_id", "bold_bin", "lab_id", "suborder", "infraorder", "superfamily", "family", 
-        "subfamily", "tribe", "genus", "species", "country", "latitude", "longitude", "ref_authoer", "ref_title", "ref_journal"])
-    for output in meta:
-        row = [output["txid"], output["gbid"], '', '', '',] + output['taxonomy'] + [output["spec"], 
-               output['country'], output['lat'], output['long']] + output['refs']
-        writer.writerow(row)
+        "subfamily", "tribe", "species", "country", "latitude", "longitude", "ref_authoer", "ref_title", "ref_journal"])
+    for gene, records in longest.items():
+        for rec in records:
+            if rec['gbid'] not in gbids:
+                gbids.append(rec['gbid'])
+                row = [rec['txid'], '', '', '', rec['gbid']] + rec['taxonomy'] + [rec["spec"], rec['country'], rec['lat'], rec['long']] + rec['refs']
+            writer.writerow(row)
     print("Metadata saved to metadata.csv")
 
 
