@@ -1,4 +1,4 @@
-import argparse
+import argparse, argcomplete
 import csv
 from Bio import Entrez
 from Bio import SeqIO
@@ -35,12 +35,13 @@ parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-l', '--list', type=str, help="Limit to list of db_ids in file")
 
-
+argcomplete.autocomplete(parser)
 args = parser.parse_args()         # Process input args from command line
 
 suborders = ['Adephaga', 'Polyphaga', 'Myxophaga', 'Archostemata']
 
 mito = ['ATP6', 'ATP8', 'COX1', 'COX2', 'COX3', 'CYTB', 'ND1', 'ND2', 'ND3', 'ND4', 'ND4L', 'ND5', 'ND6']
+rna = ['12S', '16S', '18S', '28S']
 
 genes = {"12S": ["12S", "12S RIBOSOMAL RNA", "12S RRNA", "SSU"],
          "16S": ["16S", "16S RIBOSOMAL RNA", "16S RRNA", "LARGESUBUNITRIBOSOMALRNA", "LSU"],
@@ -164,10 +165,6 @@ for gene, records in species.items():
         row.extend(rec['refs'])
         writer.writerow(row)
 
-rna = ['12S', '16S', '18S', '28S']
-
-
-
 for gene, records in species.items():
     if gene in rna:
         file = open(f"{gene}.fasta", "w")
@@ -176,11 +173,9 @@ for gene, records in species.items():
             fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
             file.write(fasta_id)
             x += 1
-        print(f'{x} records written to {gene}.fasta')
 
     else:
         file = open(f"{gene}.fasta", "w")
-        rf = open(f"{gene}.fa", "w")
         x = 0
         y = 0
         for rec in records:
@@ -193,7 +188,12 @@ for gene, records in species.items():
                 file.write(fasta_id)
                 x += 1
             else:
+                if y == 0:
+                    rf = open(f"{gene}.rf", "w")
                 rf.write(fasta_id)
                 y += 1
-        print(f'{x} records written to {gene}.fasta')
-        print(f'{y} records without reading frame written to {gene}.fa')
+    print(f'{x} records written to {gene}.fasta')
+    if y > 0:
+        print(f'{y} records without reading frame written to {gene}.rf')
+
+
