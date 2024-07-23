@@ -323,7 +323,6 @@ with open("metadata.csv", "w") as file:     # Open output file
 # Write fastas
 for gene, records in longest.items():
     file = open(f"{gene}.fasta", "w")
-    rf = open(f"{gene}.rf", "w")
     x = 0
     y = 0
     for rec in records:
@@ -332,6 +331,8 @@ for gene, records in longest.items():
             x += 1
         else:
             if rec['frame'] == '':
+                if y == 0:
+                    rf = open(f"{gene}.rf", "w")
                 rf.write(f">{rec['gbid']}\n{rec['seq']}\n")
                 y += 1
             else:
