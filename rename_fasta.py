@@ -8,8 +8,6 @@ parser.add_argument("-n", "--names", type=str, help="List of new names (with old
 parser.add_argument("-c", "--csv", type=str, help="CSV file, new names in first column, old names in second")
 parser.add_argument("-o", "--output", type=str, help="Output fasta file")
 parser.add_argument("-r", "--renamed", type=str, help="Output csv with old and new names")
-
-
 args = parser.parse_args()
 
 recs = {}
@@ -45,11 +43,13 @@ if args.names:
             recs[new_id] = {rec.id: rec.seq}
 
 if args.csv:
+    # new names in first column, old names in second
     meta = {}
     with open(args.csv) as file:
         metadata = csv.reader(file)
         for row in metadata:
-            meta[row[1]] = row[0]
+            if row [0] != '' and row[0] != 'NA':
+                meta[row[1]] = row[0]
 
     records = SeqIO.parse(args.input, "fasta")
     output = open(args.output, 'w')
