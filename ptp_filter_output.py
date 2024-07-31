@@ -1,24 +1,29 @@
+#!/usr/bin/env python3
 import csv
 import argparse
+from Bio import SeqIO
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
+parser = argparse.ArgumentParser(description="Select longest sequences for PTP delimited species")
 parser.add_argument("-i", "--input", type=str, help="mPTP output txt file")
-parser.add_argument("-m", "--meta", type=str, help="metadata file (supermatrix_count.py output)")
+parser.add_argument("-s", "--supermatrix", type=str, help="fasta with the tree's supermatrix")
 parser.add_argument("-k", "--keep", type=str, help="file with list of taxa to keep (eg constraint, outgroup)")
 parser.add_argument("-o", "--output", type=str, help="output file with filtered fasta IDs")
 
 args = parser.parse_args()
 
-# Save gene count for each taxon in dict
+# Get nucleotide ocunt for each taxon
 count = {}
-with open(args.meta) as file:
-    metadata = csv.reader(file)
-    for row in metadata:
-        try:
-            count[row[0]] = int(row[2])
-        except ValueError:
-            continue
+records = SeqIO.parse(args.supermatrix, "fasta")
+x = 0
+for rec in records:
+    x += 1
+    # Count gaps
+    total = len(rec.seq)
+    gaps = rec.seq.count('-')
+    length = total - gaps
+    count[rec.id] = length
+print(f'{x} taxa in supermatrix')
 
 keep = []
 if args.keep:
