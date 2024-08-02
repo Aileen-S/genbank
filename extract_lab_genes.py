@@ -105,7 +105,7 @@ def genbank_metadata(rec):
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
-parser.add_argument('-m', '--metadata', action='store_true', help='Save metadata')
+#parser.add_argument('-m', '--metadata', action='store_true', help='Save metadata')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-l', '--list', type=str, help="Limit to list of db_ids in file")
 
@@ -156,17 +156,17 @@ species = {}
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
+        print(rec.name)
         if args.list:
             if rec.name not in ids:
                 continue
-        if args.metadata:
-            output = genbank_metadata(rec)
-        else:
-            output = {"gbid": rec.name}
+        output = {}
+        # if args.metadata:
+        #     output = genbank_metadata(rec)
         g = 0
         for feature in rec.features:
-            type = feature.type
-            if type in ('CDS', 'rRNA'):
+            #type = feature.type
+            if feature.type in ('CDS', 'rRNA'):
                 names = get_feat_name(feature)                       # Find gene name
                 stdname = "none"
                 for k, v in genes.items():
@@ -174,38 +174,50 @@ with open(args.gb_file) as file:
                         if name in v:
                             stdname = k
                             g += 1
+                print(f"Standard gene name: {stdname}")
+
                 if stdname == 'none':
                     unrec_genes.append(name)
                 if 'codon_start' in feature.qualifiers:
                     frame = feature.qualifiers["codon_start"][0]
                 else:
                     frame = ''
+                print(f"Reading frame: {frame}")
                 seq = feature.extract(rec.seq)
-                output.update({"gene": stdname,
-                               "length": len(seq),
-                               "seq": seq,
-                               "frame": frame})
-                if stdname in species:
-                    species[stdname].append(output)
-                else:
-                    species[stdname] = [output]
+                output = {"gbid": rec.name,
+                          "gene": stdname,
+                          "length": len(seq),
+                          "seq": seq,
+                          "frame": frame}
+                print(stdname)
+                if stdname not in species:
+                    species[stdname] = []
+                species[stdname].append(output)
+                print(species)
         #count[rec.name] = g
+import pprint
+#pprint.pprint(species)
 
-    # Write CSV metadata file
-if args.metadata:
-    gbids = []
-    with open("metadata.csv", "w") as file:
-        writer = csv.writer(file)
-        writer.writerow(
-            ["ncbi_taxid", "genbank_accession", "bold_id", "bold_bin", "lab_id", "suborder", "infraorder", "superfamily", "family", 
-            "subfamily", "tribe", "species", "country", "latitude", "longitude", "ref_authoer", "ref_title", "ref_journal"])
-        for gene, records in species.items():
-            for rec in records:
-                if rec['gbid'] not in gbids:
-                    gbids.append(rec['gbid'])
-                    row = [rec['txid'], '', '', '', rec['gbid']] + rec['taxonomy'] + [rec["spec"], rec['country'], rec['lat'], rec['long']] + rec['refs']
-                writer.writerow(row)
-        print("Metadata saved to metadata.csv")
+# for gene, recs in species.items():
+#     print(gene)
+#     print(recs)
+
+
+# Write CSV metadata file
+# if args.metadata:
+#     gbids = []
+#     with open("metadata.csv", "w") as file:
+#         writer = csv.writer(file)
+#         writer.writerow(
+#             ["ncbi_taxid", "genbank_accession", "bold_id", "bold_bin", "lab_id", "suborder", "infraorder", "superfamily", "family", 
+#             "subfamily", "tribe", "species", "country", "latitude", "longitude", "ref_authoer", "ref_title", "ref_journal"])
+#         for gene, records in species.items():
+#             for rec in records:
+#                 if rec['gbid'] not in gbids:
+#                     gbids.append(rec['gbid'])
+#                     row = [rec['txid'], '', '', '', rec['gbid']] + rec['taxonomy'] + [rec["spec"], rec['country'], rec['lat'], rec['long']] + rec['refs']
+#                 writer.writerow(row)
+#         print("Metadata saved to metadata.csv")
 
 for gene, records in species.items():
     x = 0
