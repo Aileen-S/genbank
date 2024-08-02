@@ -159,7 +159,10 @@ with open(args.gb_file) as file:
         if args.list:
             if rec.name not in ids:
                 continue
-        output = genbank_metadata(rec)
+        if args.metadata:
+            output = genbank_metadata(rec)
+        else:
+            output = {"gbid": rec.name}
         g = 0
         for feature in rec.features:
             type = feature.type
