@@ -174,7 +174,6 @@ with open(args.gb_file) as file:
                         if name in v:
                             stdname = k
                             g += 1
-                print(f"Standard gene name: {stdname}")
 
                 if stdname == 'none':
                     unrec_genes.append(name)
@@ -182,25 +181,17 @@ with open(args.gb_file) as file:
                     frame = feature.qualifiers["codon_start"][0]
                 else:
                     frame = ''
-                print(f"Reading frame: {frame}")
                 seq = feature.extract(rec.seq)
                 output = {"gbid": rec.name,
                           "gene": stdname,
                           "length": len(seq),
                           "seq": seq,
                           "frame": frame}
-                print(stdname)
                 if stdname not in species:
                     species[stdname] = []
                 species[stdname].append(output)
-                print(species)
         #count[rec.name] = g
-import pprint
-#pprint.pprint(species)
 
-# for gene, recs in species.items():
-#     print(gene)
-#     print(recs)
 
 
 # Write CSV metadata file
