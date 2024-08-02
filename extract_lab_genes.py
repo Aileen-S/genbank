@@ -208,9 +208,10 @@ if args.metadata:
         print("Metadata saved to metadata.csv")
 
 for gene, records in species.items():
+    x = 0
+    y = 0
     if gene in rna:
         file = open(f"{gene}.fasta", "w")
-        x = 0
         for rec in records:
             fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
             file.write(fasta_id)
@@ -218,8 +219,6 @@ for gene, records in species.items():
 
     else:
         file = open(f"{gene}.fasta", "w")
-        x = 0
-        y = 0
         for rec in records:
             if rec['frame'] == '':
                 fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
