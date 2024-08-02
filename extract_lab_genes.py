@@ -156,7 +156,7 @@ species = {}
 with open(args.gb_file) as file:
     record = SeqIO.parse(file, "gb")
     for rec in record:
-        print(rec.name)
+        #print(rec.name)
         if args.list:
             if rec.name not in ids:
                 continue
