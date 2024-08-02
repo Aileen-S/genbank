@@ -2,6 +2,7 @@ import argparse, argcomplete
 import csv
 from Bio import Entrez
 from Bio import SeqIO
+import re
 
 
 # Function definitions
@@ -25,13 +26,86 @@ def set_feat_name(feat, name):
                 feat.qualifiers[t][0] = name
     return feat
 
+def genbank_metadata(rec):
+    # NCBI taxon ID
+    db_xref = rec.features[0].qualifiers.get("db_xref", [])
+    txid = ""
+    for ref in db_xref:
+        if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
+            txid = "".join(filter(str.isdigit, ref))  # Extract numbers from NCBI taxon value
+
+    # Taxonomy
+    # Replace the following characters: > < . ( ) ; : ' ,
+    spec = re.sub(r"[><.();:'\"]", "", rec.annotations["organism"]).replace(",", "")
+    spec_parts = [part for part in spec.split(" ") if not re.search(r'\d', part) and not part.isupper()]
+    spec = " ".join(spec_parts)
+    specfasta = spec.replace(" ", "_")
+
+    taxonomy = ['', '', '', '', '', '']
+    for tax in rec.annotations["taxonomy"]:
+        if tax in suborders: taxonomy[0] = tax
+        if tax.endswith('formia'): taxonomy[1] = tax
+        if tax.endswith('oidea'): taxonomy[2] = tax
+        if tax.endswith('idae'): taxonomy[3] = tax
+        if tax.endswith('inae'): taxonomy[4] = tax
+        if tax.endswith('ini'): taxonomy[5] = tax
+    #taxonomy.append(spec.split(' ')[0])
+    #fastatax = f"{txid}_{taxonomy[2]}_{taxonomy[3]}_{taxonomy[4]}_{specfasta}"
+
+    # Location
+    if "country" in rec.features[0].qualifiers:
+        location = rec.features[0].qualifiers["country"][0]
+        if ":" in location:
+            country, region = location.split(":", 1)
+        else:
+            country = location
+    else:
+        country = ""
+        region = ""
+    if "lat_lon" in rec.features[0].qualifiers:
+        latlon = rec.features[0].qualifiers["lat_lon"][0]
+        ll_list = latlon.split(" ")
+        if ll_list[1] == "N":
+            lat = ll_list[0]
+        else:
+            lat = "-" + ll_list[0]
+        if ll_list[3] == "E":
+            long = ll_list[2]
+        else:
+            long = "-" + ll_list[2]
+    else:
+        latlon = ""
+        lat = ""
+        long = ""
+
+    # References
+    refs = []
+    if "references" in rec.annotations:
+        first = rec.annotations['references'][0]
+        refs.append(first.authors)
+        refs.append(first.title)
+        refs.append(first.journal)
+    output = {"gbid": rec.name,
+              "txid": txid,
+              "description": rec.description,
+              "spec_id": rec.annotations["organism"],
+              "spec": spec,
+              "date": rec.annotations["date"],
+              "taxonomy": taxonomy,
+              "country": country,
+              "lat": lat,
+              "long": long,
+              "refs": refs,
+              "row": [txid, rec.name, '', '', ''] + taxonomy + [rec.annotations["organism"], country, lat, long] + refs}
+    return output
+
 
 # Argument parser
 # Add option to find only mito genes, or only selected genes.
 parser = argparse.ArgumentParser(description="Search GenBank file, retrieve gene sequences and save as fasta.")
 parser.add_argument("-t", "--taxon", type=str, help="Taxon of interest")
 parser.add_argument('-g', '--gb_file', type=str, help="Input genbank format file")
-#parser.add_argument('-m', '--mito', action='store_true', help='Save only mitochondrial protein-coding genes')
+parser.add_argument('-m', '--metadata', action='store_true', help='Save metadata')
 parser.add_argument('-i', '--fasta_id', choices=['gbid', 'txid', 'both'], help="Choose identifiers for output fastas. Default is gbid.")
 parser.add_argument('-l', '--list', type=str, help="Limit to list of db_ids in file")
 
@@ -85,39 +159,7 @@ with open(args.gb_file) as file:
         if args.list:
             if rec.name not in ids:
                 continue
-        try:
-            db_xref = rec.features[0].qualifiers["db_xref"]
-            for ref in db_xref:
-                if "taxon" in ref:  # Get NCBI taxon, rather than BOLD cross ref
-                    txid = f'lab_{"".join(filter(str.isdigit, ref))}'  # Extract numbers from NCBI taxon value
-        except KeyError:
-            txid = ''
-        try:
-            spec = rec.annotations["organism"]
-            # Replace the following characters: > < . ( ) ; : ' ,
-            spec = spec.replace(">", "_").replace("<", "_").replace(".", "").replace('(', '_')\
-                .replace(')', '_').replace(';', '_').replace(':', '_').replace("'", "").replace(',', '')
-            specfasta = spec.replace(" ", "_")
-        except KeyError:
-            spec = ''
-            specfasta = ''
-        taxonomy = ['', '', '', '', '']
-        try:
-            for tax in rec.annotations["taxonomy"]:
-                if tax in suborders: taxonomy[0] = tax
-                if tax.endswith('oidea'): taxonomy[1] = tax
-                if tax.endswith('idae'): taxonomy[2] = tax
-                if tax.endswith('inae'): taxonomy[3] = tax
-                if tax.endswith('ini'): taxonomy[4] = tax
-            taxonomy.append(spec.split(' ')[0])
-        except KeyError:
-            print(f'No taxonomy for {rec.name}')
-        refs = []
-        if "references" in rec.annotations:
-            for ref in rec.annotations["references"]:
-                refs.append(ref.authors)
-                refs.append(ref.title)
-                refs.append(ref.journal)
+        output = genbank_metadata(rec)
         g = 0
         for feature in rec.features:
             type = feature.type
@@ -132,38 +174,35 @@ with open(args.gb_file) as file:
                 if stdname == 'none':
                     unrec_genes.append(name)
                 if 'codon_start' in feature.qualifiers:
-                    frame = feature.qualifiers["codon_start"]
+                    frame = feature.qualifiers["codon_start"][0]
                 else:
                     frame = ''
                 seq = feature.extract(rec.seq)
-                output = {"gene": stdname,
-                          "names": names,
-                          "gbid": rec.name,
-                          "txid": txid,
-                          "description": rec.description,
-                          "spec": spec,
-                          "taxonomy": taxonomy,
-                          "length": len(seq),
-                          "seq": seq,
-                          "frame": frame,
-                          "refs": refs}
+                output.update({"gene": stdname,
+                               "length": len(seq),
+                               "seq": seq,
+                               "frame": frame})
                 if stdname in species:
                     species[stdname].append(output)
                 else:
                     species[stdname] = [output]
         #count[rec.name] = g
 
-meta = open("metadata.csv", "w")
-writer = csv.writer(meta)
-writer.writerow(["db_id", "Species", "Gene", "Annotation", "Length", "Suborder", "Superfamily", "Family",
-                 "Subfamily", "Tribe", 'Genus', "Description"])
-for gene, records in species.items():
-    for rec in records:
-        row = [rec['gbid'], rec['spec'], rec['gene'], rec['names'], rec['length']]
-        row.extend(rec['taxonomy'])
-        row.append(rec['description'])
-        row.extend(rec['refs'])
-        writer.writerow(row)
+    # Write CSV metadata file
+if args.metadata:
+    gbids = []
+    with open("metadata.csv", "w") as file:
+        writer = csv.writer(file)
+        writer.writerow(
+            ["ncbi_taxid", "genbank_accession", "bold_id", "bold_bin", "lab_id", "suborder", "infraorder", "superfamily", "family", 
+            "subfamily", "tribe", "species", "country", "latitude", "longitude", "ref_authoer", "ref_title", "ref_journal"])
+        for gene, records in species.items():
+            for rec in records:
+                if rec['gbid'] not in gbids:
+                    gbids.append(rec['gbid'])
+                    row = [rec['txid'], '', '', '', rec['gbid']] + rec['taxonomy'] + [rec["spec"], rec['country'], rec['lat'], rec['long']] + rec['refs']
+                writer.writerow(row)
+        print("Metadata saved to metadata.csv")
 
 for gene, records in species.items():
     if gene in rna:
@@ -182,7 +221,7 @@ for gene, records in species.items():
             if rec['frame'] == '':
                 fasta_id = f">{rec['gbid']}\n{rec['seq']}\n"
             else:
-                fasta_id = f">{rec['gbid']};frame={rec['frame'][0]}\n{rec['seq']}\n"
+                fasta_id = f">{rec['gbid']};frame={rec['frame']}\n{rec['seq']}\n"
 
             if 'frame' in fasta_id:
                 file.write(fasta_id)
